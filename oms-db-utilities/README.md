@@ -1,4 +1,4 @@
-# OMS Database Library
+# OMS Database Utility
 
 A reusable persistence library for the OMS ecosystem, providing JPA entities, repositories, mappers, and small services around Oracle-backed tables:
 - TBOM_REFERENCE_DATA

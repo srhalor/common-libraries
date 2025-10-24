@@ -3,11 +3,16 @@ package com.shdev.omsdatabase.util;
 import com.shdev.omsdatabase.entity.DocumentConfigEntity;
 import com.shdev.omsdatabase.entity.DocumentRequestEntity;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for AuditEntityListener with MDC integration.
+ */
+@DisplayName("AuditEntityListener MDC Integration Unit Tests")
 class AuditEntityListenerMdcTest {
 
     @AfterEach
@@ -15,7 +20,14 @@ class AuditEntityListenerMdcTest {
         MDC.clear();
     }
 
+    /**
+     * Test: prePersist sets header and token from MDC for DocumentRequest
+     * Given: DocumentRequestEntity
+     * When: prePersist is called
+     * Then: createUidHeader and createUidToken are set from MDC values
+     */
     @Test
+    @DisplayName("prePersist: sets header and token from MDC for DocumentRequest")
     void prePersist_sets_header_and_token_from_mdc_for_DocumentRequest() {
         // no MDC -> no values set
         DocumentRequestEntity e = DocumentRequestEntity.builder().build();
@@ -32,7 +44,14 @@ class AuditEntityListenerMdcTest {
         assertEquals("tokUser", e2.getCreateUidToken());
     }
 
+    /**
+     * Test: prePersist and preUpdate set generic user for DocumentConfig
+     * Given: DocumentConfigEntity
+     * When: prePersist and preUpdate are called
+     * Then: createUid and lastUpdateUid are set from MDC userId
+     */
     @Test
+    @DisplayName("prePersist and preUpdate: set generic user for DocumentConfig")
     void prePersist_and_preUpdate_set_generic_user_for_DocumentConfig() {
         // no MDC
         DocumentConfigEntity e = DocumentConfigEntity.builder().build();

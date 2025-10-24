@@ -14,6 +14,6 @@
         <module>libraries-parent</module>
         <module>common-utilities</module>
         <module>security-utilities</module>
-        <module>oms-db-libraries</module>
+        <module>oms-db-utilities</module>
     </modules>
 </project>

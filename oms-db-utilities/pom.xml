@@ -10,7 +10,7 @@
         <relativePath>../libraries-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>oms-db-libraries</artifactId>
+    <artifactId>oms-db-utilities</artifactId>
     <name>oms-db-libraries</name>
     <packaging>jar</packaging>
     <description>Reusable OMS persistence library (entities, repositories, mappers, services) for OMS services
@@ -50,6 +50,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
         </dependency>
     </dependencies>
 

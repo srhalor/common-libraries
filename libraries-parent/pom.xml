@@ -60,7 +60,7 @@
       </dependency>
       <dependency>
         <groupId>com.shdev</groupId>
-        <artifactId>oms-db-libraries</artifactId>
+        <artifactId>oms-db-utilities</artifactId>
         <version>${shdev.libraries.version}</version>
       </dependency>
     </dependencies>
