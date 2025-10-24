@@ -12,7 +12,7 @@ Multi-module monorepo for shared libraries used by Spring Boot services. Central
 ## 1) Quick start (Windows)
 
 ```bat
-:: Build and test everything (always run from repo root so ${revision} resolves)
+:: Build and test everything (run from repo root)
 mvnw.cmd -B clean verify
 
 :: Install to local ~/.m2 for trying in another project
@@ -46,6 +46,10 @@ Key ideas
 ---
 
 ## 3) Use in a Spring Boot host (no Spring Boot parent in service)
+
+Important
+- In consumer services, always pin explicit released versions (X.Y.Z). Do not rely on repository-internal properties.
+
 Add this to your service `pom.xml`:
 ```xml
 <parent>
@@ -85,35 +89,68 @@ Add this to your service `pom.xml`:
 ```
 Why this works: `libraries-parent` already inherits Spring Boot’s parent, so your service doesn’t need `spring-boot-starter-parent`.
 
+Alternative (service already has a different parent)
+- If your service must keep a different parent (e.g., it already uses Spring Boot’s parent), import our dependency management as a BOM and keep your existing parent. Pin a concrete version.
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.shdev</groupId>
+      <artifactId>libraries-parent</artifactId>
+      <version>X.Y.Z</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+
+<dependencies>
+  <dependency>
+    <groupId>com.shdev</groupId>
+    <artifactId>common-utilities</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>com.shdev</groupId>
+    <artifactId>security-utilities</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>com.shdev</groupId>
+    <artifactId>oms-db-libraries</artifactId>
+  </dependency>
+</dependencies>
+```
+
 ---
 
 ## 4) Version management (single source of truth in libraries-parent)
-All internal library versions are tied to the parent `libraries-parent` via the `revision` property and `dependencyManagement`.
-- Children declare their parent as:
+All internal library versions are centralized in `libraries-parent`.
+
+- Children declare their parent with an explicit version, and typically inherit their own `<version>` from the parent:
   ```xml
   <parent>
     <groupId>com.shdev</groupId>
     <artifactId>libraries-parent</artifactId>
-    <version>${revision}</version>
+    <version>X.Y.Z</version>
     <relativePath>../libraries-parent/pom.xml</relativePath>
   </parent>
   ```
-- Always build from the repository root (aggregator) so `${revision}` resolves properly.
+- Inter-module dependencies are versionless; they are managed by `libraries-parent` via dependencyManagement.
 
 Common tasks (Windows CMD)
 ```bat
-:: Show current parent revision (from repo root)
-mvnw.cmd -q -pl libraries-parent -DforceStdout help:evaluate -Dexpression=revision
+:: Show current libraries-parent version (from repo root)
+mvnw.cmd -q -pl libraries-parent -DforceStdout help:evaluate -Dexpression=project.version
 
-:: Bump the parent revision ONLY (children inherit automatically; no edits in child POMs)
-mvnw.cmd -B -pl libraries-parent -am versions:set-property -Dproperty=revision -DnewVersion=0.1.1 -DgenerateBackupPoms=false
+:: Bump libraries-parent version to 0.1.1 and update child POMs to use it
+mvnw.cmd -B -pl libraries-parent -am versions:set -DnewVersion=0.1.1 -DgenerateBackupPoms=false
+mvnw.cmd -B versions:update-parent -DparentVersion=[0.1.1] -DgenerateBackupPoms=false -DallowSnapshots=true
 
 :: (Optional) Verify effective managed version for internal libs
 mvnw.cmd -q -pl libraries-parent -DforceStdout help:evaluate -Dexpression=shdev.libraries.version
 ```
 Notes
-- Do NOT edit child POMs when bumping versions; only change `revision` in `libraries-parent/pom.xml`.
-- Because you build from the root, `${revision}` in child `<parent>` sections resolves correctly.
+- Do not edit child modules’ `<version>` unless you have a reason; they inherit the parent version.
+- After bumping `libraries-parent`, ensure all child POMs point to the new parent version (the commands above handle this).
 - For Spring Boot upgrades, update the literal `<parent><version>` in `libraries-parent` and keep other changes property-driven.
 
 ---
@@ -165,11 +202,13 @@ Artifacts include `-sources.jar` and `-javadoc.jar` for better IDE/repo browsing
 
 ## 7) FAQ
 - Q: Do I need to update each module’s POM on version bumps?
-  - A: No. Update `revision` in `libraries-parent/pom.xml`; all children inherit through their `<parent>`.
+  - A: Update `libraries-parent` version and make sure child POMs’ `<parent><version>` matches. Children typically inherit their own `<version>` from the parent.
 - Q: Can a module use another (e.g., `security-utilities` use `common-utilities`)?
   - A: Yes. Declare the dependency without a version; the parent/BOM manages it and the reactor computes build order.
 - Q: Do I have to release all modules when only one changes?
   - A: Recommended yes for consistency, especially if you publish the BOM. Selective deploy is possible but manage BOM expectations carefully.
+- Q: How do I consume these libraries without switching my service’s parent?
+  - A: Keep your current parent and import `com.shdev:libraries-parent` as a BOM (type pom, scope import) at a fixed version; then add the library dependencies without versions.
 
 ---
 

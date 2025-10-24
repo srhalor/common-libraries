@@ -13,15 +13,12 @@
 
   <groupId>com.shdev</groupId>
   <artifactId>libraries-parent</artifactId>
-  <version>${revision}</version>
+  <version>0.1.0</version>
   <packaging>pom</packaging>
   <name>libraries-parent</name>
   <description>Parent POM for common libraries (inherits Spring Boot parent)</description>
 
   <properties>
-    <!-- Project/version controls -->
-    <revision>0.1.0</revision>
-
     <!-- Build/runtime constraints -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>21</java.version>
@@ -36,7 +33,7 @@
 
     <!-- Internal modules version property
          Anchor to this parent POM's version so consumers don't leak their own project.version -->
-    <shdev.libraries.version>${project.version}</shdev.libraries.version>
+    <shdev.libraries.version>0.1.0</shdev.libraries.version>
   </properties>
 
   <dependencyManagement>
