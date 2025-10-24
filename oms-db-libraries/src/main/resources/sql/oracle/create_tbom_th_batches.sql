@@ -109,7 +109,7 @@ BEGIN
     IF :NEW.create_uid_token IS NULL THEN
         :NEW.create_uid_token := USER;
     END IF;
-END;
+END omtbe_01t_bir;
 /
 
 -- Trigger to set last_update_dat before update
@@ -119,5 +119,5 @@ CREATE OR REPLACE TRIGGER omtbe_01t_bur
     FOR EACH ROW
 BEGIN
     :NEW.last_update_dat := SYSTIMESTAMP;
-END;
+END omtbe_01t_bur;
 /

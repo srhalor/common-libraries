@@ -152,4 +152,4 @@ CREATE OR REPLACE TRIGGER omrda_02_bdr
 BEGIN
     RAISE_APPLICATION_ERROR(-20021,
                             'Physical deletes are disabled on tbom_reference_data; perform a logical delete by updating effect_to_dat to SYSTIMESTAMP');
-END omrda_prevent_delete;
+END omrda_02_bdr;

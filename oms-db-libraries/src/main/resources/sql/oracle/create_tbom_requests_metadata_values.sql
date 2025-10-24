@@ -74,5 +74,5 @@ BEGIN
     IF :NEW.id IS NULL THEN
         SELECT sqomrme_metadata_value_id.NEXTVAL INTO :NEW.id FROM dual;
     END IF;
-END;
+END omrme_01t_bir;
 /

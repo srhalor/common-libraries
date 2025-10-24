@@ -112,5 +112,5 @@ CREATE OR REPLACE TRIGGER omdrt_02t_bur
     FOR EACH ROW
 BEGIN
     :NEW.last_update_dat := SYSTIMESTAMP;
-END;
+END omdrt_02t_bur;
 /

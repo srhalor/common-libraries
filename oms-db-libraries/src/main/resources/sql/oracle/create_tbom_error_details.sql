@@ -72,6 +72,6 @@ BEGIN
     IF :NEW.id IS NULL THEN
         SELECT sqomedl_error_details_id.NEXTVAL INTO :NEW.id FROM dual;
     END IF;
-END;
+END omedl_01t_bir;
 /
 
