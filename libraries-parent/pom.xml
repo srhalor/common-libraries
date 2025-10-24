@@ -6,7 +6,7 @@
 
   <groupId>com.shdev</groupId>
   <artifactId>libraries-parent</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1.0</version>
   <packaging>pom</packaging>
   <name>libraries-parent</name>
   <description>Parent + BOM for common libraries</description>
@@ -14,11 +14,15 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>21</java.version>
-    <spring-boot.version>3.3.7</spring-boot.version>
+    <spring-boot.version>3.5.7</spring-boot.version>
+    <!-- Centralized library versions -->
+    <mapstruct.version>1.6.3</mapstruct.version>
 
     <!-- Plugin versions -->
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>3.5.0</maven.surefire.plugin.version>
+    <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
+    <maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -32,6 +36,17 @@
         <scope>import</scope>
       </dependency>
 
+      <!-- Managed versions for commonly used libs -->
+      <dependency>
+        <groupId>org.mapstruct</groupId>
+        <artifactId>mapstruct</artifactId>
+        <version>${mapstruct.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+      </dependency>
+
       <!-- Internal modules for consumer convenience -->
       <dependency>
         <groupId>com.shdev</groupId>
@@ -41,6 +56,11 @@
       <dependency>
         <groupId>com.shdev</groupId>
         <artifactId>security-utilities</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.shdev</groupId>
+        <artifactId>oms-db-libraries</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>
@@ -66,6 +86,20 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-maven-plugin</artifactId>
           <version>${spring-boot.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${maven.source.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven.javadoc.plugin.version}</version>
+          <configuration>
+            <failOnError>false</failOnError>
+            <doclint>none</doclint>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -96,6 +130,58 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <!-- Attach sources/Javadocs for all child modules -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Centralized annotation processors for all modules -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-configuration-processor</artifactId>
+              <version>${spring-boot.version}</version>
+            </path>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </path>
+            <path>
+              <groupId>org.mapstruct</groupId>
+              <artifactId>mapstruct-processor</artifactId>
+              <version>${mapstruct.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
       </plugin>
     </plugins>
   </build>

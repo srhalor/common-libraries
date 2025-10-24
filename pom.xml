@@ -5,7 +5,7 @@
 
     <groupId>com.shdev</groupId>
     <artifactId>common-libraries</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>pom</packaging>
     <name>common-libraries</name>
     <description>Aggregator POM for shared libraries</description>
@@ -14,5 +14,6 @@
         <module>libraries-parent</module>
         <module>common-utilities</module>
         <module>security-utilities</module>
+        <module>oms-db-libraries</module>
     </modules>
 </project>
