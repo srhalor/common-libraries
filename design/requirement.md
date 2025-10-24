@@ -5,17 +5,17 @@ Last updated: 2025-10-24
 
 ## 0) Purpose
 - Single Maven monorepo to develop, test, and publish multiple custom libraries for Spring Boot applications.
-- Centralize ALL versioning (project, Spring Boot, dependencies, plugins) in one parent/BOM to simplify upgrades and keep services consistent.
-- Allow inter-module dependencies and provide a simple consumer experience in host services without using Spring Boot parent.
+- Centralize ALL versioning (project, Spring Boot, dependencies, plugins) in one parent to simplify upgrades and keep services consistent.
+- Allow inter-module dependencies and provide a simple consumer experience in host services without including the Boot parent in the service.
 
 ---
 
 ## 1) Architecture and Layout
 - Root aggregator POM (packaging=pom) orchestrates the build.
-- libraries-parent (packaging=pom) acts as Parent + BOM:
-  - properties: java.version, spring-boot.version, and key dependency/plugin versions
-  - dependencyManagement: import Spring Boot BOM and pin extras if needed
-  - pluginManagement: standardize compiler, surefire, boot plugin, etc.
+- libraries-parent (packaging=pom) is the shared parent and inherits Spring Boot’s parent:
+  - Parent: org.springframework.boot:spring-boot-starter-parent:3.5.7
+  - properties: java.version and any versions not covered by Boot (e.g., mapstruct)
+  - dependencyManagement: manage internal modules (and any extras not covered by Boot)
   - Attach sources and javadocs for better IDE/repo consumption
 - Library modules (packaging=jar): common-utilities, security-utilities, oms-db-libraries, others as needed.
 
@@ -24,7 +24,7 @@ Structure
 common-libraries/
 ├─ pom.xml                  # root aggregator
 ├─ libraries-parent/
-│  └─ pom.xml               # parent + BOM
+│  └─ pom.xml               # parent (inherits spring-boot-starter-parent)
 ├─ common-utilities/
 │  └─ pom.xml
 ├─ security-utilities/
@@ -38,67 +38,44 @@ common-libraries/
 ## 2) Conventions and Constraints
 - Java 21; build with Maven Wrapper (mvnw/mvnw.cmd).
 - All modules inherit from libraries-parent. No child module defines <version>.
-- Do not set versions for managed dependencies/plugins in child modules.
+- Do not set versions for dependencies/plugins that are managed by Boot parent; only define versions for extras not covered by Boot.
 - Enforce rules via Maven Enforcer (Java/Maven versions, dependency convergence).
 - Inter-module dependencies are allowed (e.g., security-utilities -> common-utilities); avoid cycles.
 
 ---
 
-## 3) Parent/BOM (libraries-parent) – Required capabilities
+## 3) Parent (libraries-parent) – Required capabilities
+- Inherits spring-boot-starter-parent to get Spring Boot’s dependency and plugin management.
 - Properties
-  - spring-boot.version (single source of truth)
-  - versions for key libraries (e.g., mapstruct, lombok) and for plugins
+  - java.version
+  - versions for key libraries not covered by Boot (e.g., mapstruct)
 - dependencyManagement
-  - Import Spring Boot BOM: org.springframework.boot:spring-boot-dependencies:${spring-boot.version}
   - Declare internal modules for consumer convenience at ${project.version}
-- pluginManagement
-  - Pin maven-compiler-plugin, maven-surefire-plugin, and spring-boot-maven-plugin
 - Build plugins
   - Attach -sources.jar and -javadoc.jar for all modules
 
-Illustrative snippets (actual values in libraries-parent/pom.xml)
+Illustrative snippet
 ```xml
+<parent>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-parent</artifactId>
+  <version>3.5.7</version>
+  <relativePath/>
+</parent>
+
 <properties>
   <java.version>21</java.version>
-  <spring-boot.version>3.5.7</spring-boot.version>
+  <mapstruct.version>1.6.3</mapstruct.version>
 </properties>
-
-<dependencyManagement>
-  <dependencies>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-dependencies</artifactId>
-      <version>${spring-boot.version}</version>
-      <type>pom</type>
-      <scope>import</scope>
-    </dependency>
-    <!-- Internal modules -->
-    <dependency>
-      <groupId>com.shdev</groupId>
-      <artifactId>common-utilities</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.shdev</groupId>
-      <artifactId>security-utilities</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.shdev</groupId>
-      <artifactId>oms-db-libraries</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
-</dependencyManagement>
 ```
 
 ---
 
 ## 4) Modules – Minimal rules
 - Each module inherits from libraries-parent.
-- Declare only artifactId/name and direct dependencies (no versions if managed).
+- Declare only artifactId/name and direct dependencies (no versions if managed by Boot parent).
 - For Boot configuration metadata in a module, add optional spring-boot-configuration-processor.
-- If a module uses MapStruct or Lombok, add those dependencies and, if needed, configure annotation processors per-module.
+- If a module uses MapStruct or Lombok, add those dependencies and configure processors per-module when needed.
 
 Inter-module dependency example (no version needed)
 ```xml
@@ -110,7 +87,7 @@ Inter-module dependency example (no version needed)
 
 ---
 
-## 5) Using libraries in Spring Boot services (no Spring Boot parent)
+## 5) Using libraries in Spring Boot services (no Spring Boot parent in service)
 Host service POM inherits from libraries-parent and declares Boot starters normally.
 ```xml
 <parent>
@@ -130,82 +107,39 @@ Host service POM inherits from libraries-parent and declares Boot starters norma
     <artifactId>common-utilities</artifactId>
   </dependency>
 </dependencies>
-
-<build>
-  <plugins>
-    <plugin>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-maven-plugin</artifactId>
-    </plugin>
-  </plugins>
-</build>
 ```
-Why this works: libraries-parent imports the Spring Boot BOM and pins plugin versions, so services don’t need spring-boot-starter-parent.
+Why this works: libraries-parent inherits the Spring Boot parent, so services don’t need to include spring-boot-starter-parent themselves.
 
 ---
 
 ## 6) Versioning and Releases
 - Semantic Versioning for the monorepo: MAJOR.MINOR.PATCH applies to all modules via project.version.
 - Bump project version once; children inherit automatically.
-- Recommended: release all modules together for each version to keep the BOM consistent.
-- Advanced: selective deploy is possible but ensure the BOM doesn’t reference non-published modules at that version.
+- Recommended: release all modules together for each version to keep the BOM/parent expectations consistent.
 
 Windows-friendly workflows
 ```bat
 :: Bump repo-wide version
 mvnw.cmd -B versions:set -DnewVersion=1.2.0 -DprocessAllModules -DgenerateBackupPoms=false
 
+:: Update Spring Boot parent version (in libraries-parent)
+mvnw.cmd -B -pl libraries-parent -am versions:update-parent -DparentVersion=3.5.8 -DgenerateBackupPoms=false
+
 :: Build and deploy all modules
 mvnw.cmd -B -DskipTests deploy
 
 :: Deploy a single module (build required deps too)
 mvnw.cmd -B -pl security-utilities -am -DskipTests deploy
-
-:: Update Spring Boot version centrally
-mvnw.cmd -B versions:set-property -Dproperty=spring-boot.version -DnewVersion=3.5.8 -DgenerateBackupPoms=false
 ```
 Notes
 - Reactor builds compute order automatically; avoid cyclic dependencies.
-- SNAPSHOTs are more tolerant for partial deploys; for releases, ensure all artifacts referenced by the BOM exist.
+- For releases, ensure all artifacts referenced by the parent/BOM exist.
 
 ---
 
 ## 7) Publishing (own repository)
 Recommended: Sonatype Nexus Repository OSS
-- Pros: easy to host, proxy Maven Central, supports anonymous reads, widely used.
 - Configure distributionManagement in libraries-parent and credentials in CI settings.xml.
-
-distributionManagement (placeholder using shdev domain)
-```xml
-<distributionManagement>
-  <repository>
-    <id>internal-releases</id>
-    <url>https://nexus.shdev.local/repository/maven-releases/</url>
-  </repository>
-  <snapshotRepository>
-    <id>internal-snapshots</id>
-    <url>https://nexus.shdev.local/repository/maven-snapshots/</url>
-  </snapshotRepository>
-</distributionManagement>
-```
-
-CI settings.xml (written by the pipeline)
-```xml
-<settings>
-  <servers>
-    <server>
-      <id>internal-releases</id>
-      <username>${env.NEXUS_USERNAME}</username>
-      <password>${env.NEXUS_PASSWORD}</password>
-    </server>
-    <server>
-      <id>internal-snapshots</id>
-      <username>${env.NEXUS_USERNAME}</username>
-      <password>${env.NEXUS_PASSWORD}</password>
-    </server>
-  </servers>
-</settings>
-```
 
 ---
 
@@ -216,9 +150,9 @@ CI settings.xml (written by the pipeline)
 ---
 
 ## 9) Acceptance Criteria
-- [x] Root aggregator builds at least two modules (common-utilities, security-utilities, oms-db-libraries).
-- [x] libraries-parent provides centralized properties, dependencyManagement (imports Spring Boot BOM), and pluginManagement.
+- [x] Root aggregator builds modules (common-utilities, security-utilities, oms-db-libraries).
+- [x] libraries-parent inherits Spring Boot parent and centralizes any extra versions and plugin configuration.
 - [x] Modules inherit from libraries-parent and do not declare versions for managed deps/plugins.
-- [x] Host Spring Boot services inherit from libraries-parent (not Boot parent) and consume modules without versions.
+- [x] Host Spring Boot services inherit from libraries-parent (not Boot parent directly) and consume modules without versions.
 - [x] Inter-module dependencies work without specifying versions.
 - [x] CI can deploy snapshots/releases to the chosen repository via distributionManagement + settings.xml.

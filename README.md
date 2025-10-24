@@ -1,9 +1,9 @@
 # common-libraries (Maven monorepo)
 
-Multi-module monorepo for shared libraries used by Spring Boot services. Centralized versioning, Spring Boot alignment via BOM, and uniform plugin configuration live in `libraries-parent`.
+Multi-module monorepo for shared libraries used by Spring Boot services. Centralized versioning and Spring Boot alignment live in `libraries-parent`, which inherits `spring-boot-starter-parent`.
 
 - Java: 21
-- Parent/BOM: `com.shdev:libraries-parent`
+- Parent: `com.shdev:libraries-parent` (inherits `org.springframework.boot:spring-boot-starter-parent`)
 - Modules: `common-utilities`, `security-utilities`, `oms-db-libraries`
 - Artifacts publish with sources and Javadocs attached
 
@@ -12,7 +12,7 @@ Multi-module monorepo for shared libraries used by Spring Boot services. Central
 ## 1) Quick start (Windows)
 
 ```bat
-:: Build and test everything
+:: Build and test everything (always run from repo root so ${revision} resolves)
 mvnw.cmd -B clean verify
 
 :: Install to local ~/.m2 for trying in another project
@@ -31,8 +31,8 @@ Prereqs
 ## 2) Structure
 ```
 common-libraries/
-├─ pom.xml                 # root aggregator
-├─ libraries-parent/       # parent + BOM (centralized versions)
+├─ pom.xml                 # root aggregator (no parent logic here)
+├─ libraries-parent/       # shared parent (inherits Spring Boot parent; centralizes versions)
 ├─ common-utilities/       # library module (jar)
 ├─ security-utilities/     # library module (jar)
 └─ oms-db-libraries/       # library module (jar)
@@ -40,12 +40,12 @@ common-libraries/
 
 Key ideas
 - Root POM only aggregates modules.
-- All modules inherit from `libraries-parent` and do not declare explicit versions for managed dependencies/plugins.
+- All modules inherit from `libraries-parent` and do not declare explicit versions for dependencies/plugins covered by Spring Boot parent.
 - Inter-module deps (e.g., `security-utilities` -> `common-utilities`) require no version tags; reactor resolves order automatically.
 
 ---
 
-## 3) Use in a Spring Boot host (no Spring Boot parent)
+## 3) Use in a Spring Boot host (no Spring Boot parent in service)
 Add this to your service `pom.xml`:
 ```xml
 <parent>
@@ -83,31 +83,38 @@ Add this to your service `pom.xml`:
   </plugins>
 </build>
 ```
-Why this works: the parent imports the Spring Boot BOM and pins plugin versions, so your service doesn’t need `spring-boot-starter-parent`.
+Why this works: `libraries-parent` already inherits Spring Boot’s parent, so your service doesn’t need `spring-boot-starter-parent`.
 
 ---
 
-## 4) Version management (centralized)
-All modules share the repo version (`project.version`) from `libraries-parent`. Spring Boot and plugin versions are properties in the parent.
+## 4) Version management (single source of truth in libraries-parent)
+All internal library versions are tied to the parent `libraries-parent` via the `revision` property and `dependencyManagement`.
+- Children declare their parent as:
+  ```xml
+  <parent>
+    <groupId>com.shdev</groupId>
+    <artifactId>libraries-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../libraries-parent/pom.xml</relativePath>
+  </parent>
+  ```
+- Always build from the repository root (aggregator) so `${revision}` resolves properly.
 
-Common commands (Windows CMD)
+Common tasks (Windows CMD)
 ```bat
-:: Show current project version (from repo root)
-mvnw.cmd -q -DforceStdout help:evaluate -Dexpression=project.version
+:: Show current parent revision (from repo root)
+mvnw.cmd -q -pl libraries-parent -DforceStdout help:evaluate -Dexpression=revision
 
-:: Bump the repo-wide version (applies to ALL modules)
-mvnw.cmd -B versions:set -DnewVersion=0.1.1 -DprocessAllModules -DgenerateBackupPoms=false
+:: Bump the parent revision ONLY (children inherit automatically; no edits in child POMs)
+mvnw.cmd -B -pl libraries-parent -am versions:set-property -Dproperty=revision -DnewVersion=0.1.1 -DgenerateBackupPoms=false
 
-:: Update Spring Boot version (single source of truth in parent)
-mvnw.cmd -B versions:set-property -Dproperty=spring-boot.version -DnewVersion=3.5.8 -DgenerateBackupPoms=false
-
-:: Update other managed properties if added later
-mvnw.cmd -B versions:set-property -Dproperty=lombok.version -DnewVersion=1.18.36 -DgenerateBackupPoms=false
-mvnw.cmd -B versions:set-property -Dproperty=mapstruct.version -DnewVersion=1.6.4 -DgenerateBackupPoms=false
+:: (Optional) Verify effective managed version for internal libs
+mvnw.cmd -q -pl libraries-parent -DforceStdout help:evaluate -Dexpression=shdev.libraries.version
 ```
 Notes
-- After bumping versions, commit the changes and tag if releasing.
-- The BOM lists internal modules at the same version. Prefer releasing all modules together for each new version to avoid missing artifacts for consumers.
+- Do NOT edit child POMs when bumping versions; only change `revision` in `libraries-parent/pom.xml`.
+- Because you build from the root, `${revision}` in child `<parent>` sections resolves correctly.
+- For Spring Boot upgrades, update the literal `<parent><version>` in `libraries-parent` and keep other changes property-driven.
 
 ---
 
@@ -117,11 +124,11 @@ Build or deploy only one module (reactor builds its prerequisites too):
 :: Build only security-utilities and its local deps
 mvnw.cmd -B -pl security-utilities -am clean install
 
-:: Deploy only common-utilities (ensure BOM consistency before publishing it)
+:: Deploy only common-utilities (ensure parent expectations before publishing it)
 mvnw.cmd -B -pl common-utilities -am -DskipTests deploy
 ```
 Caution
-- If you publish the parent/BOM at version X.Y.Z, consumers may expect all listed modules to exist at X.Y.Z. Either deploy all modules, or delay publishing the BOM until all artifacts are uploaded.
+- If you publish the parent at version X.Y.Z, consumers may expect all listed modules to exist at X.Y.Z. Either deploy all modules, or delay publishing until all artifacts are uploaded.
 
 ---
 
@@ -157,16 +164,15 @@ Artifacts include `-sources.jar` and `-javadoc.jar` for better IDE/repo browsing
 ---
 
 ## 7) FAQ
+- Q: Do I need to update each module’s POM on version bumps?
+  - A: No. Update `revision` in `libraries-parent/pom.xml`; all children inherit through their `<parent>`.
 - Q: Can a module use another (e.g., `security-utilities` use `common-utilities`)?
   - A: Yes. Declare the dependency without a version; the parent/BOM manages it and the reactor computes build order.
-- Q: Do I need to update each module’s POM on version bumps?
-  - A: No. Bump once at the repo root; every child inherits the new version.
 - Q: Do I have to release all modules when only one changes?
   - A: Recommended yes for consistency, especially if you publish the BOM. Selective deploy is possible but manage BOM expectations carefully.
 
 ---
 
 ## 8) Useful references
-- Parent POM: `libraries-parent/pom.xml` (Spring Boot BOM import, pluginManagement, distributionManagement)
+- Parent POM: `libraries-parent/pom.xml` (central properties and dependencyManagement)
 - Design doc: `design/requirement.md` (concise repo requirements and CI notes)
-

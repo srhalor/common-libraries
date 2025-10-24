@@ -4,112 +4,79 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.7</version>
+    <relativePath/>
+  </parent>
+
   <groupId>com.shdev</groupId>
   <artifactId>libraries-parent</artifactId>
-  <version>0.1.0</version>
+  <version>${revision}</version>
   <packaging>pom</packaging>
   <name>libraries-parent</name>
-  <description>Parent + BOM for common libraries</description>
+  <description>Parent POM for common libraries (inherits Spring Boot parent)</description>
 
   <properties>
+    <!-- Project/version controls -->
+    <revision>0.1.0</revision>
+
+    <!-- Build/runtime constraints -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>21</java.version>
-    <spring-boot.version>3.5.7</spring-boot.version>
-    <!-- Centralized library versions -->
+    <java.min.version>17</java.min.version>
+    <maven.min.version>3.9</maven.min.version>
+
+    <!-- Centralized library versions not managed by Spring Boot -->
     <mapstruct.version>1.6.3</mapstruct.version>
 
     <!-- Plugin versions -->
-    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <maven.surefire.plugin.version>3.5.0</maven.surefire.plugin.version>
-    <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
-    <maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+
+    <!-- Internal modules version property
+         Anchor to this parent POM's version so consumers don't leak their own project.version -->
+    <shdev.libraries.version>${project.version}</shdev.libraries.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- Align with Spring Boot BOM -->
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-dependencies</artifactId>
-        <version>${spring-boot.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
+      <!-- Spring Boot dependency versions are inherited via spring-boot-starter-parent -->
 
-      <!-- Managed versions for commonly used libs -->
+      <!-- Manage versions for libraries not covered by Boot BOM -->
       <dependency>
         <groupId>org.mapstruct</groupId>
         <artifactId>mapstruct</artifactId>
         <version>${mapstruct.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
       </dependency>
 
       <!-- Internal modules for consumer convenience -->
       <dependency>
         <groupId>com.shdev</groupId>
         <artifactId>common-utilities</artifactId>
-        <version>${project.version}</version>
+        <version>${shdev.libraries.version}</version>
       </dependency>
       <dependency>
         <groupId>com.shdev</groupId>
         <artifactId>security-utilities</artifactId>
-        <version>${project.version}</version>
+        <version>${shdev.libraries.version}</version>
       </dependency>
       <dependency>
         <groupId>com.shdev</groupId>
         <artifactId>oms-db-libraries</artifactId>
-        <version>${project.version}</version>
+        <version>${shdev.libraries.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>${maven.compiler.plugin.version}</version>
-          <configuration>
-            <release>${java.version}</release>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>${maven.surefire.plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-maven-plugin</artifactId>
-          <version>${spring-boot.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-source-plugin</artifactId>
-          <version>${maven.source.plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <version>${maven.javadoc.plugin.version}</version>
-          <configuration>
-            <failOnError>false</failOnError>
-            <doclint>none</doclint>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-
+    <!-- Rely on Spring Boot parent for plugin versions; only configure what we need -->
     <plugins>
       <!-- Enforce basic constraints -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>${maven-enforcer-plugin.version}</version>
         <executions>
           <execution>
             <id>enforce</id>
@@ -119,10 +86,10 @@
             <configuration>
               <rules>
                 <requireMavenVersion>
-                  <version>[3.9,)</version>
+                  <version>[${maven.min.version},)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[17,)</version>
+                  <version>[${java.min.version},)</version>
                 </requireJavaVersion>
                 <dependencyConvergence/>
               </rules>
@@ -158,30 +125,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-
-      <!-- Centralized annotation processors for all modules -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.springframework.boot</groupId>
-              <artifactId>spring-boot-configuration-processor</artifactId>
-              <version>${spring-boot.version}</version>
-            </path>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </path>
-            <path>
-              <groupId>org.mapstruct</groupId>
-              <artifactId>mapstruct-processor</artifactId>
-              <version>${mapstruct.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
       </plugin>
     </plugins>
   </build>
