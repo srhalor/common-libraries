@@ -1,6 +1,6 @@
 package com.shdev.omsdatabase.entity;
 
-import com.shdev.omsdatabase.util.AuditEntityListener;
+import com.shdev.omsdatabase.entity.base.DualCreateUidEntity;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
@@ -8,7 +8,6 @@ import lombok.*;
 import org.hibernate.annotations.*;
 
 import java.io.Serializable;
-import java.time.Instant;
 
 /**
  * Entity representing Thunderhead batch details associated with document requests.
@@ -22,11 +21,10 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "TBOM_TH_BATCHES")
-@EntityListeners(AuditEntityListener.class)
 @DynamicInsert
 @DynamicUpdate
 @Comment("Thunderhead batch details associated with document requests.")
-public class ThBatchEntity implements Serializable {
+public class ThBatchEntity extends DualCreateUidEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TBOM_TH_BATCHES_id_gen")
@@ -62,36 +60,18 @@ public class ThBatchEntity implements Serializable {
     private Long dmsDocumentId;
 
     @Comment("Flag indicating whether the Thunderhead batch status has been synchronized back to OMS.")
-    @ColumnDefault("0")
-    @Column(name = "SYNC_STATUS", nullable = false)
+    @ColumnDefault("'N'")
+    @Column(name = "SYNC_STATUS", nullable = false, length = 1)
     private Boolean syncStatus;
 
     @Comment("Flag indicating whether the batch status event has been published.")
-    @ColumnDefault("0")
-    @Column(name = "EVENT_STATUS", nullable = false)
+    @ColumnDefault("'N'")
+    @Column(name = "EVENT_STATUS", nullable = false, length = 1)
     private Boolean eventStatus;
 
     @Comment("Number of retry attempts for synchronization and event publishing.")
     @ColumnDefault("0")
     @Column(name = "RETRY_COUNT", nullable = false)
     private Long retryCount;
-
-    @Comment("Record creation timestamp set at insert.")
-    @Column(name = "CREATED_DAT", nullable = false)
-    private Instant createdDat;
-
-    @Comment("Record last update timestamp set on insert/update.")
-    @Column(name = "LAST_UPDATE_DAT", nullable = false)
-    private Instant lastUpdateDat;
-
-    @Size(max = 20)
-    @Comment("User ID (from request header) that created the record; set by service if provided, else DB trigger.")
-    @Column(name = "CREATE_UID_HEADER", nullable = false, length = 20)
-    private String createUidHeader;
-
-    @Size(max = 20)
-    @Comment("User ID (from JWT token) that created the record; set by service if provided, else DB trigger.")
-    @Column(name = "CREATE_UID_TOKEN", nullable = false, length = 20)
-    private String createUidToken;
 
 }

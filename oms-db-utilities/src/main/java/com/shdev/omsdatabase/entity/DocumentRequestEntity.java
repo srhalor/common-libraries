@@ -1,14 +1,10 @@
 package com.shdev.omsdatabase.entity;
 
-import com.shdev.omsdatabase.util.AuditEntityListener;
+import com.shdev.omsdatabase.entity.base.DualCreateUidEntity;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.*;
-
-import java.io.Serializable;
-import java.time.Instant;
 
 /**
  * Entity representing document requests and their overall processing status.
@@ -22,11 +18,10 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "TBOM_DOCUMENT_REQUESTS")
-@EntityListeners(AuditEntityListener.class)
 @DynamicInsert
 @DynamicUpdate
 @Comment("Table to store document requests and their overall processing status.")
-public class DocumentRequestEntity implements Serializable {
+public class DocumentRequestEntity extends DualCreateUidEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TBOM_DOCUMENT_REQUESTS_id_gen")
@@ -58,23 +53,5 @@ public class DocumentRequestEntity implements Serializable {
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMRDA_DOC_STATUS_ID", nullable = false)
     private ReferenceDataEntity omrdaDocStatus;
-
-    @Comment("Record creation timestamp. Set by DB trigger when omitted.")
-    @Column(name = "CREATED_DAT", nullable = false)
-    private Instant createdDat;
-
-    @Comment("Record last update timestamp. Set by DB trigger when omitted.")
-    @Column(name = "LAST_UPDATE_DAT", nullable = false)
-    private Instant lastUpdateDat;
-
-    @Size(max = 20)
-    @Comment("User ID from request header when creating the record. If not provided, DB trigger should set it.")
-    @Column(name = "CREATE_UID_HEADER", nullable = false, length = 20)
-    private String createUidHeader;
-
-    @Size(max = 20)
-    @Comment("User ID from JWT token when creating the record. If not provided, DB trigger should set it.")
-    @Column(name = "CREATE_UID_TOKEN", nullable = false, length = 20)
-    private String createUidToken;
 
 }

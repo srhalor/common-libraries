@@ -188,3 +188,21 @@ Notes
 
 ## Misc
 - A MySQL Docker Compose file exists under docker/sql-db but this library targets Oracle and only packages Oracle DDL/seed scripts. The MySQL compose is optional and not used by the library itself.
+
+## Boolean storage conventions (Y/N)
+- All Java `Boolean` entity attributes are persisted as single-character columns using AttributeConverter mappings.
+- True = 'Y', False or null = 'N'.
+- A global `BooleanToStringConverter` (`@Converter(autoApply = true)`) enforces consistent mapping.
+- Schema scripts updated (Oracle & MySQL) to use `CHAR(1)` with default 'N' for:
+  - `tbom_th_batches.sync_status`
+  - `tbom_th_batches.event_status`
+  - `tbom_reference_data.editable`
+- When adding new boolean columns, declare them as `CHAR(1)` DEFAULT 'N' NOT NULL in DDL; the converter will handle persistence.
+
+## Shared audit base classes
+- Repeated audit fields refactored into mapped superclasses:
+  - `TimestampedEntity`: `createdDat`, `lastUpdateDat` (trigger-managed, not insertable/updatable)
+  - `DualCreateUidEntity`: header/token create user fields (`createUidHeader`, `createUidToken`)
+  - `SingleAuditUidEntity`: single create/update user fields (`createUid`, `lastUpdateUid`)
+- Entities now extend these bases; the JPA listener continues to populate user fields from MDC.
+- Remove duplicate audit fields if creating new entities: extend the appropriate base instead.

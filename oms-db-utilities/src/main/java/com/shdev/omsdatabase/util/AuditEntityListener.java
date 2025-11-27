@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.util.StringUtils;
 
+import static com.shdev.omsdatabase.util.OmsConstants.USER_ID_HEADER;
+import static com.shdev.omsdatabase.util.OmsConstants.USER_ID_TOKEN;
+
 /**
  * JPA lifecycle listener to populate audit user fields automatically on persist/update.
  * Looks up user identifiers from thread context (SLF4J MDC) using well-known keys.
@@ -25,11 +28,6 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 public class AuditEntityListener {
-
-    // MDC keys expected to be set by the hosting application per request/thread
-    private static final String HDR_USER_KEY = "userIdHeader";
-    private static final String TOKEN_USER_KEY = "userIdToken";
-    private static final String GENERIC_USER_KEY = "userId";
 
     /**
      * Helper to get value from MDC, treating blank as null
@@ -62,8 +60,8 @@ public class AuditEntityListener {
 
     // Applies CREATE_UID_HEADER and CREATE_UID_TOKEN where supported entities are involved
     private static void applyHeaderAndTokenUidCreateFields(Object entity) {
-        var headerUid = mdc(HDR_USER_KEY);
-        var tokenUid = mdc(TOKEN_USER_KEY);
+        var headerUid = mdc(USER_ID_HEADER);
+        var tokenUid = mdc(USER_ID_TOKEN);
         log.trace("prePersist Header UID: {}, Token UID: {}", headerUid, tokenUid);
 
         if (entity instanceof DocumentRequestEntity e) {
@@ -80,7 +78,7 @@ public class AuditEntityListener {
     // Applies generic CREATE_UID and LAST_UPDATE_UID for entities that use a single user identifier
     private static void applyGenericUidCreateAndUpdateFields(Object entity) {
 
-        var genericUid = mdc(GENERIC_USER_KEY);
+        var genericUid = mdc(USER_ID_HEADER);
         log.trace("prePersist Generic UID: {}", genericUid);
 
         if (entity instanceof DocumentConfigEntity d) {
@@ -104,7 +102,7 @@ public class AuditEntityListener {
 
         log.trace("Entering preUpdate for entity: {}", entity.getClass().getSimpleName());
 
-        var genericUid = mdc(GENERIC_USER_KEY);
+        var genericUid = mdc(USER_ID_HEADER);
         log.trace("preUpdate Generic UID: {}", genericUid);
 
         if (null != genericUid) {

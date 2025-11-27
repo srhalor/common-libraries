@@ -1,6 +1,6 @@
 package com.shdev.omsdatabase.entity;
 
-import com.shdev.omsdatabase.util.AuditEntityListener;
+import com.shdev.omsdatabase.entity.base.SingleAuditUidEntity;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
@@ -8,7 +8,6 @@ import lombok.*;
 import org.hibernate.annotations.*;
 
 import java.io.Serializable;
-import java.time.Instant;
 import java.time.LocalDate;
 
 /**
@@ -24,11 +23,10 @@ import java.time.LocalDate;
 @Setter
 @Entity
 @Table(name = "TBOM_DOCUMENT_CONFIGURATIONS")
-@EntityListeners(AuditEntityListener.class)
 @DynamicInsert
 @DynamicUpdate
 @Comment("Effective-dated document configuration key/value mappings. References tbom_reference_data for footer, application document specification, and configuration code.")
-public class DocumentConfigEntity implements Serializable {
+public class DocumentConfigEntity extends SingleAuditUidEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TBOM_DOCUMENT_CONFIGURATIONS_id_gen")
@@ -72,23 +70,4 @@ public class DocumentConfigEntity implements Serializable {
     @Comment("Date/time until which this configuration row remains effective.")
     @Column(name = "EFFECT_TO_DAT", nullable = false)
     private LocalDate effectToDat;
-
-    @Comment("Record creation timestamp. Set by DB trigger when omitted.")
-    @Column(name = "CREATED_DAT", nullable = false)
-    private Instant createdDat;
-
-    @Comment("Record last update timestamp. Set by DB trigger when omitted.")
-    @Column(name = "LAST_UPDATE_DAT", nullable = false)
-    private Instant lastUpdateDat;
-
-    @Size(max = 20)
-    @Comment("User ID who created the record. If not provided, DB trigger should set it.")
-    @Column(name = "CREATE_UID", nullable = false, length = 20)
-    private String createUid;
-
-    @Size(max = 20)
-    @Comment("User ID who last updated the record. If not provided, DB trigger should set it.")
-    @Column(name = "LAST_UPDATE_UID", nullable = false, length = 20)
-    private String lastUpdateUid;
-
 }

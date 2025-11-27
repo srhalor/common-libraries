@@ -42,21 +42,23 @@ CREATE SEQUENCE sqomrda_ref_data_id
 CREATE TABLE tbom_reference_data
 (
     id              NUMBER PRIMARY KEY,
-    ref_data_type   VARCHAR2(50)  NOT NULL,
-    ref_data_name   VARCHAR2(100) NOT NULL,
+    ref_data_type   VARCHAR2(50)        NOT NULL,
+    ref_data_name   VARCHAR2(100)       NOT NULL,
+    editable        CHAR(1) DEFAULT 'N' NOT NULL,
     description     VARCHAR2(255),
-    effect_from_dat DATE          NOT NULL,
-    effect_to_dat   DATE          NOT NULL,
-    created_dat     TIMESTAMP     NOT NULL,
-    last_update_dat TIMESTAMP     NOT NULL,
-    create_uid      VARCHAR2(20)  NOT NULL,
-    last_update_uid VARCHAR2(20)  NOT NULL
+    effect_from_dat DATE                NOT NULL,
+    effect_to_dat   DATE                NOT NULL,
+    created_dat     TIMESTAMP           NOT NULL,
+    last_update_dat TIMESTAMP           NOT NULL,
+    create_uid      VARCHAR2(20)        NOT NULL,
+    last_update_uid VARCHAR2(20)        NOT NULL
 );
 
 -- Add comments to columns
 COMMENT ON TABLE tbom_reference_data IS 'Central table to store reference data values used by oms system (document types, document names, metadata keys, source systems, etc.).';
 COMMENT ON COLUMN tbom_reference_data.id IS 'Primary Key for reference data.';
 COMMENT ON COLUMN tbom_reference_data.ref_data_type IS 'Type of reference data (e.g. DOCUMENT_TYPE, DOCUMENT_NAME, METADATA_KEY, SOURCE_SYSTEM).';
+COMMENT ON COLUMN tbom_reference_data.ref_data_name IS 'Name or value of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).';
 COMMENT ON COLUMN tbom_reference_data.ref_data_name IS 'Name or value of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).';
 COMMENT ON COLUMN tbom_reference_data.description IS 'Optional description for the reference data value.';
 COMMENT ON COLUMN tbom_reference_data.effect_from_dat IS 'Date from which this reference is effective.';

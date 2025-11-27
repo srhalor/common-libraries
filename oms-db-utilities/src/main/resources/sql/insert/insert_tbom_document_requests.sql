@@ -136,11 +136,13 @@ BEGIN
                     -- Precompute batch status name to avoid calling local function in SQL
                     v_batch_status_name := pick(v_batch_statuses);
                     INSERT INTO tbom_th_batches (omdrt_id, th_batch_id, omrda_th_status_id, batch_name,
+                                                 sync_status, event_status,
                                                  create_uid_header, create_uid_token)
                     VALUES (v_req_id,
                             TRUNC(DBMS_RANDOM.VALUE(10000, 99999)),
                             get_reference_id('BATCH_STATUS', v_batch_status_name),
                             'BATCH-' || TO_CHAR(i, 'FM00') || '-' || TO_CHAR(b, 'FM00'),
+                            'N', 'N',
                             'SEEDER', 'SEEDER')
                     RETURNING id INTO v_batch_id;
 
@@ -162,4 +164,3 @@ BEGIN
     COMMIT;
 END;
 /
-

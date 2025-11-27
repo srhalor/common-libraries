@@ -49,8 +49,8 @@ CREATE TABLE tbom_th_batches
     omrda_th_status_id NUMBER                  NOT NULL,
     batch_name         VARCHAR2(100)           NOT NULL,
     dms_document_id    NUMBER,
-    sync_status        NUMBER(1) DEFAULT 0     NOT NULL,
-    event_status       NUMBER(1) DEFAULT 0     NOT NULL,
+    sync_status        CHAR(1)   DEFAULT 'N'   NOT NULL,
+    event_status       CHAR(1)   DEFAULT 'N'   NOT NULL,
     retry_count        NUMBER    DEFAULT 0     NOT NULL,
     created_dat        TIMESTAMP               NOT NULL,
     last_update_dat    TIMESTAMP               NOT NULL,
@@ -120,4 +120,3 @@ CREATE OR REPLACE TRIGGER omtbe_01t_bur
 BEGIN
     :NEW.last_update_dat := SYSTIMESTAMP;
 END omtbe_01t_bur;
-/
