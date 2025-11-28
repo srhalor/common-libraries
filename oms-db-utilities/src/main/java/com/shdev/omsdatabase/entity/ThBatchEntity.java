@@ -29,12 +29,12 @@ public class ThBatchEntity extends DualCreateUidEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TBOM_TH_BATCHES_id_gen")
     @SequenceGenerator(name = "TBOM_TH_BATCHES_id_gen", sequenceName = "SQOMTHB_TH_BATCH_ID", allocationSize = 1)
-    @Comment("Primary key for Thunderhead batch.")
+    @Comment("Primary metadataKey for Thunderhead batch.")
     @Column(name = "ID", nullable = false)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign key to tbom_document_requests(id). One request can have multiple batches.")
+    @Comment("Foreign metadataKey to tbom_document_requests(id). One request can have multiple batches.")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMDRT_ID", nullable = false)
     private DocumentRequestEntity omdrt;
@@ -45,13 +45,13 @@ public class ThBatchEntity extends DualCreateUidEntity implements Serializable {
     private Long thBatchId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign key to tbom_reference_data(id) with type BATCH_STATUS indicating batch processing status.")
+    @Comment("Foreign metadataKey to tbom_reference_data(id) with refDataType BATCH_STATUS indicating batch processing status.")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMRDA_TH_STATUS_ID", nullable = false)
     private ReferenceDataEntity omrdaThStatus;
 
     @Size(max = 100)
-    @Comment("Batch name passed to Thunderhead when creating the batch.")
+    @Comment("Batch refDataValue passed to Thunderhead when creating the batch.")
     @Column(name = "BATCH_NAME", nullable = false, length = 100)
     private String batchName;
 

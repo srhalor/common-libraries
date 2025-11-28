@@ -24,8 +24,8 @@ Base URL: `/monitoring-service/api/v1`
 ```json
 {
   "refDataType": "DOCUMENT_TYPE",
-  "refDataName": "Invoice",
-  "description": "Invoice document type",
+  "refDataValue": "Invoice",
+  "description": "Invoice document refDataType",
   "editable": true,
   "effectFromDat": "2024-06-01",
   "effectToDat": "4712-12-31"
@@ -36,8 +36,8 @@ Base URL: `/monitoring-service/api/v1`
 {
   "id": 101,
   "refDataType": "DOCUMENT_TYPE",
-  "refDataName": "Invoice",
-  "description": "Invoice document type",
+  "refDataValue": "Invoice",
+  "description": "Invoice document refDataType",
   "editable": true,
   "effectFromDat": "2024-06-01",
   "effectToDat": "4712-12-31",
@@ -77,8 +77,8 @@ Base URL: `/monitoring-service/api/v1`
   {
     "id": 101,
     "refDataType": "DOCUMENT_TYPE",
-    "refDataName": "Invoice",
-    "description": "Invoice document type",
+    "refDataValue": "Invoice",
+    "description": "Invoice document refDataType",
     "editable": true,
     "effectFromDat": "2024-06-01",
     "effectToDat": "4712-12-31",
@@ -90,8 +90,8 @@ Base URL: `/monitoring-service/api/v1`
   {
     "id": 102,
     "refDataType": "DOCUMENT_TYPE",
-    "refDataName": "Credit Note",
-    "description": "Credit Note document type",
+    "refDataValue": "Credit Note",
+    "description": "Credit Note document refDataType",
     "editable": true,
     "effectFromDat": "2024-06-01",
     "effectToDat": "4712-12-31",
@@ -126,9 +126,9 @@ Base URL: `/monitoring-service/api/v1`
 ```json
 {
   "id": 1,
-  "footerId": { "id": 10, "value": "1", "description": "Footer Id 1" },
-  "appDocSpec": { "id": 14, "value": "IV", "description": "Invoice document name starting with IV" },
-  "code": { "id": 18, "value": "SIGNEE_1", "description": "First signature" },
+  "footer": { "id": 10, "refDataValue": "1", "description": "Footer Id 1" },
+  "appDocSpec": { "id": 14, "refDataValue": "IV", "description": "Invoice document refDataValue starting with IV" },
+  "code": { "id": 18, "refDataValue": "SIGNEE_1", "description": "First signature" },
   "value": "GBVKAL1",
   "description": "First signee for footer 1, app_doc_spec IV.",
   "effectFromDat": "2024-06-01",
@@ -162,9 +162,9 @@ Base URL: `/monitoring-service/api/v1`
 [
   {
     "id": 1,
-    "footerId": { "id": 10, "value": "1", "description": "Footer Id 1" },
-    "appDocSpec": { "id": 14, "value": "IV", "description": "Invoice document name starting with IV" },
-    "code": { "id": 18, "value": "SIGNEE_1", "description": "First signature" },
+    "footer": { "id": 10, "refDataValue": "1", "description": "Footer Id 1" },
+    "appDocSpec": { "id": 14, "refDataValue": "IV", "description": "Invoice document refDataValue starting with IV" },
+    "code": { "id": 18, "refDataValue": "SIGNEE_1", "description": "First signature" },
     "value": "GBVKAL1",
     "description": "First signee for footer 1, app_doc_spec IV.",
     "effectFromDat": "2024-06-01",
@@ -176,9 +176,9 @@ Base URL: `/monitoring-service/api/v1`
   },
   {
     "id": 2,
-    "footerId": { "id": 11, "value": "2", "description": "Footer Id 2" },
-    "appDocSpec": { "id": 15, "value": "PO", "description": "Policy document starting with PO" },
-    "code": { "id": 19, "value": "SIGNEE_2", "description": "Second signature" },
+    "footer": { "id": 11, "refDataValue": "2", "description": "Footer Id 2" },
+    "appDocSpec": { "id": 15, "refDataValue": "PO", "description": "Policy document starting with PO" },
+    "code": { "id": 19, "refDataValue": "SIGNEE_2", "description": "Second signature" },
     "value": "GBVKAL2",
     "description": "Second signee for footer 2, app_doc_spec CN.",
     "effectFromDat": "2024-06-01",
@@ -216,7 +216,7 @@ Base URL: `/monitoring-service/api/v1`
   "documentStatuses": [10],
   "fromDate": "2025-11-01",
   "toDate": "2025-11-18",
-  "sorts": [ { "property": "id", "dir": "desc" } ]
+  "sorts": [ { "property": "id", "dir": "description" } ]
 }
 ```
 - Request body (advanced search with metadata and multiple ids):
@@ -243,10 +243,10 @@ Base URL: `/monitoring-service/api/v1`
   "content": [
     {
       "id": 101,
-      "sourceSystem": { "id": 1, "value": "ARCADE", "description": "Arcade" },
-      "documentType": { "id": 2, "value": "INVOICE", "description": "Invoice documents" },
-      "documentName": { "id": 5, "value": "IVZRECPA", "description": "Zero reconciliation and premium adjustment invoice document" },
-      "documentStatus": { "id": 10, "value": "COMPLETED", "description": "Document request processed successfully" },
+      "sourceSystem": { "id": 1, "refDataValue": "ARCADE", "description": "Arcade" },
+      "documentType": { "id": 2, "refDataValue": "INVOICE", "description": "Invoice documents" },
+      "documentName": { "id": 5, "refDataValue": "IVZRECPA", "description": "Zero reconciliation and premium adjustment invoice document" },
+      "documentStatus": { "id": 10, "refDataValue": "COMPLETED", "description": "Document request processed successfully" },
       "createdDat": "2025-11-18T12:04:55.000",
       "lastUpdateDat": "2025-11-18T12:05:10.000",
       "create_uid_header": "GBSURT1",
@@ -254,16 +254,15 @@ Base URL: `/monitoring-service/api/v1`
     },
     {
       "id": 102,
-      "sourceSystem": { "id": 3, "value": "THUNDERHEAD", "description": "Thunderhead" },
-      "documentType": { "id": 2, "value": "INVOICE", "description": "Invoice documents" },
-      "documentName": { "id": 6, "value": "IVBRKCOM", "description": "Broker commission invoice document" },
-      "documentStatus": { "id": 12, "value": "FAILED", "description": "Document request processing failed" },
+      "sourceSystem": { "id": 3, "refDataValue": "THUNDERHEAD", "description": "Thunderhead" },
+      "documentType": { "id": 2, "refDataValue": "INVOICE", "description": "Invoice documents" },
+      "documentName": { "id": 6, "refDataValue": "IVBRKCOM", "description": "Broker commission invoice document" },
+      "documentStatus": { "id": 12, "refDataValue": "FAILED", "description": "Document request processing failed" },
       "createdDat": "2025-11-18T11:50:30.000",
       "lastUpdateDat": "2025-11-18T11:52:00.000",
       "create_uid_header": "GBSURT2",
       "create_uid_token": "GBSURT2"
-    },
-    ...
+    }
   ],
   "page": 3,
   "size": 10,
@@ -294,12 +293,12 @@ Base URL: `/monitoring-service/api/v1`
 [
   { 
     "id": 301,
-    "metadataKey": { "id": 3, "value": "customerId", "description": "Customer Identifier" },
+    "metadataKey": { "id": 3, "refDataValue": "customerId", "description": "Customer Identifier" },
     "metadataValue": "12345"
   },
   { 
     "id": 302,
-    "metadataKey": { "id": 4, "value": "invoiceNumber", "description": "Invoice Number" },
+    "metadataKey": { "id": 4, "refDataValue": "invoiceNumber", "description": "Invoice Number" },
     "metadataValue": "INV-2024-0001"
   }
 ]
@@ -312,7 +311,7 @@ Base URL: `/monitoring-service/api/v1`
 - Response: JSON payload in byte array.
 ```json
 {
-  "content": { ... }  // Json payload in byte array
+  "content": ""  
 }
 ```
 
@@ -322,7 +321,7 @@ Base URL: `/monitoring-service/api/v1`
 - Response: Raw XML payload in byte array.
 ```json
 {
-  "content": { ... }  // XML payload in byte array
+  "content": ""
 }
 ```
 
@@ -337,7 +336,7 @@ Base URL: `/monitoring-service/api/v1`
     "id": 12,
     "requestId": 101,
     "batch_id": 76647,
-    "batchStatus": { "id": 10, "value": "COMPLETED", "description": "Batch processed successfully" },
+    "batchStatus": { "id": 10, "refDataValue": "COMPLETED", "description": "Batch processed successfully" },
     "batchName": "TH-REQ-101-1",
     "dmsDocumentId": 8888,
     "syncStatus": 1,
@@ -349,7 +348,7 @@ Base URL: `/monitoring-service/api/v1`
     "id": 13,
     "requestId": 101,
     "batch_id": 76648,
-    "batchStatus": { "id": 12, "value": "FAILED", "description": "Batch processing failed" },
+    "batchStatus": { "id": 12, "refDataValue": "FAILED", "description": "Batch processing failed" },
     "batchName": "TH-REQ-101-2",
     "dmsDocumentId": null,
     "syncStatus": 0,

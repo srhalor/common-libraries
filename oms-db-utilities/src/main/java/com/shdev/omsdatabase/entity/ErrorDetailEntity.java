@@ -27,18 +27,18 @@ public class ErrorDetailEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TBOM_ERROR_DETAILS_id_gen")
     @SequenceGenerator(name = "TBOM_ERROR_DETAILS_id_gen", sequenceName = "SQOMEDL_ERROR_DETAILS_ID", allocationSize = 1)
-    @Comment("Primary key for error details.")
+    @Comment("Primary metadataKey for error details.")
     @Column(name = "ID", nullable = false)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign key to tbom_th_batches(id).")
+    @Comment("Foreign metadataKey to tbom_th_batches(id).")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMTBE_ID", nullable = false)
     private ThBatchEntity omtbe;
 
     @Size(max = 100)
-    @Comment("Error category or type (e.g., VALIDATION_ERROR, TIMEOUT, INTERNAL_ERROR).")
+    @Comment("Error category or refDataType (e.g., VALIDATION_ERROR, TIMEOUT, INTERNAL_ERROR).")
     @Column(name = "ERROR_CATEGORY", nullable = false, length = 100)
     private String errorCategory;
 

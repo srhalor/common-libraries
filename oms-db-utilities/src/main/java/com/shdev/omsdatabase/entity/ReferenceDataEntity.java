@@ -42,17 +42,17 @@ public class ReferenceDataEntity extends SingleAuditUidEntity implements Seriali
     private String refDataType;
 
     @Size(max = 100)
-    @Comment("Name or value of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).")
-    @Column(name = "REF_DATA_NAME", nullable = false, length = 100)
-    private String refDataName;
+    @Comment("Name or metadataValue of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).")
+    @Column(name = "REF_DATA_VALUE", nullable = false, length = 100)
+    private String refDataValue;
 
-    @Comment("Indicates if the reference data value is editable ('Y'/'N').")
+    @Comment("Indicates if the reference data metadataValue is editable ('Y'/'N').")
     @ColumnDefault("'N'")
     @Column(name = "EDITABLE", nullable = false, length = 1)
     private Boolean editable;
 
     @Size(max = 255)
-    @Comment("Optional description for the reference data value.")
+    @Comment("Optional description for the reference data metadataValue.")
     @Column(name = "DESCRIPTION")
     private String description;
 

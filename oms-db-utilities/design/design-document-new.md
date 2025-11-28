@@ -12,7 +12,7 @@ Below are the main entities (tables) in the schema, along with their purposes, k
 - **Physical schema:**
   - `id` NUMBER PRIMARY KEY (populated from sequence `sqomrda_ref_data_id`) — Primary Key for reference data.
   - `ref_data_type` VARCHAR2(50) NOT NULL — Type of reference data (e.g. DOCUMENT_TYPE, DOCUMENT_NAME, METADATA_KEY, SOURCE_SYSTEM).
-  - `ref_data_name` VARCHAR2(100) NOT NULL — Name or value of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).
+  - `ref_data_value` VARCHAR2(100) NOT NULL — Name or value of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).
   - `description` VARCHAR2(255) — Optional description for the reference data value.
   - `effect_from_dat` DATE NOT NULL — Date from which this reference is effective.
   - `effect_to_dat` DATE NOT NULL — Date till which this reference is effective.
@@ -21,20 +21,20 @@ Below are the main entities (tables) in the schema, along with their purposes, k
   - `create_uid` VARCHAR2(20) NOT NULL — User ID who created the record.
   - `last_update_uid` VARCHAR2(20) NOT NULL — User ID who last updated the record.
 - **Indexes:**
-  - Indexes on `ref_data_type`, `ref_data_name`, `effect_from_dat`, `effect_to_dat` for lookups and range scans (created by `omrda_01`..`omrda_04`).
+  - Indexes on `ref_data_type`, `ref_data_value`, `effect_from_dat`, `effect_to_dat` for lookups and range scans (created by `omrda_01`..`omrda_04`).
 - **Sequence:**
   - `sqomrda_ref_data_id` used to assign primary keys on insert when `id` is not provided.
 - **Triggers & behavior:**
   - Compound trigger `omrda_01t_bir_bur` (BEFORE EACH ROW + AFTER STATEMENT):
     - On INSERT: assigns `id` from `sqomrda_ref_data_id` if missing; defaults `effect_from_dat` to `TRUNC(SYSDATE)` and `effect_to_dat` to `DATE '4712-12-31'` when not provided; sets `created_dat` when missing and always sets `last_update_dat` to `SYSTIMESTAMP`; defaults `create_uid`/`last_update_uid` to `USER` when missing.
-    - The trigger collects changed rows into a temporary collection and, AFTER STATEMENT, closes overlapping previous versions for the same `(ref_data_type, ref_data_name)` by setting their `effect_to_dat` to one second before the new `effect_from_dat` (implemented as `new.effect_from_dat - 1/86400`).
+    - The trigger collects changed rows into a temporary collection and, AFTER STATEMENT, closes overlapping previous versions for the same `(ref_data_type, ref_data_value)` by setting their `effect_to_dat` to one second before the new `effect_from_dat` (implemented as `new.effect_from_dat - 1/86400`).
   - Prevent-delete trigger `omrda_02_bdr`: raises an application error (`-20021`) to block physical deletes; logical deletes should be done by updating `effect_to_dat`.
 - **Historization rule:**
-  - New or updated rows that set or change `effect_from_dat` will cause prior rows with overlapping validity for the same `(ref_data_type, ref_data_name)` to be closed (their `effect_to_dat` set to one second before the new `effect_from_dat`).
+  - New or updated rows that set or change `effect_from_dat` will cause prior rows with overlapping validity for the same `(ref_data_type, ref_data_value)` to be closed (their `effect_to_dat` set to one second before the new `effect_from_dat`).
 
 - **Sample Data:** `SELECT * FROM tbom_reference_data;`
 
-| id | ref_data_type   | ref_data_name          | description                                                | effect_from_dat | effect_to_dat | created_dat                  | last_update_dat              | create_uid | last_update_uid |
+| id | ref_data_type   | ref_data_value          | description                                                | effect_from_dat | effect_to_dat | created_dat                  | last_update_dat              | create_uid | last_update_uid |
 |---:|-----------------|------------------------|------------------------------------------------------------|----------------:|---------------|------------------------------|------------------------------|------------|-----------------|
 |  1 | REF_DATA_TYPE   | DOCUMENT_TYPE          | "Type of document (e.g. INVOICE, POLICY)"                  |    `2020-01-01` | `4712-12-31`  | `2025-10-22 16:35:50.835348` | `2025-10-22 16:35:50.835357` | OMSUSER    | OMSUSER         |
 |  2 | REF_DATA_TYPE   | DOCUMENT_NAME          | "Specific document names (e.g. IVZRECPA, POSHOOFF)"        |    `2020-01-01` | `4712-12-31`  | `2025-10-22 16:35:50.848406` | `2025-10-22 16:35:50.848414` | OMSUSER    | OMSUSER         |
@@ -138,9 +138,9 @@ Below are the main entities (tables) in the schema, along with their purposes, k
 
 ```sql
 SELECT f.id,
-       rf.ref_data_name AS footer_id,
-       ra.ref_data_name AS app_doc_spec,
-       rc.ref_data_name AS code,
+       rf.ref_data_value AS footer_id,
+       ra.ref_data_value AS app_doc_spec,
+       rc.ref_data_value AS code,
        f.value,
        f.description,
        f.effect_from_dat,
@@ -206,10 +206,10 @@ ORDER BY f.id;
 
 ```sql
 SELECT d.id,
-       rf.ref_data_name AS source_system,
-       ra.ref_data_name AS document_type,
-       rb.ref_data_name AS document_name,
-       rc.ref_data_name AS doc_status,
+       rf.ref_data_value AS source_system,
+       ra.ref_data_value AS document_type,
+       rb.ref_data_value AS document_name,
+       rc.ref_data_value AS doc_status,
        d.created_dat,
        d.last_update_dat,
        d.create_uid_header,
@@ -277,7 +277,7 @@ ORDER BY D.id;
 ```sql
 SELECT mv.id,
        mv.omdrt_id as document_request_id,
-       rf.ref_data_name AS metadata_key,
+       rf.ref_data_value AS metadata_key,
        mv.metadata_value
 FROM tbom_requests_metadata_values mv
        LEFT JOIN tbom_reference_data rf ON rf.id = mv.omrda_id
@@ -332,7 +332,7 @@ ORDER BY mv.id;
 ```sql
 SELECT b.id,
        b.omdrt_id AS document_request_id,
-       rf.ref_data_name AS th_status,
+       rf.ref_data_value AS th_status,
        b.batch_name,
        b.dms_document_id,
        b.sync_status,

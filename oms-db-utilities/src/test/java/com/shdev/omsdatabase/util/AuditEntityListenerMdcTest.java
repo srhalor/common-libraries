@@ -59,16 +59,15 @@ class AuditEntityListenerMdcTest {
         assertNull(e.getCreateUid());
         assertNull(e.getLastUpdateUid());
 
-        MDC.put("userId", "genericUser");
+        MDC.put("userIdHeader", "genericUser"); // changed from userId
         DocumentConfigEntity e2 = DocumentConfigEntity.builder().build();
         new AuditEntityListener().prePersist(e2);
         assertEquals("genericUser", e2.getCreateUid());
         assertEquals("genericUser", e2.getLastUpdateUid());
 
         // update
-        MDC.put("userId", "genericUser2");
+        MDC.put("userIdHeader", "genericUser2"); // changed from userId
         new AuditEntityListener().preUpdate(e2);
         assertEquals("genericUser2", e2.getLastUpdateUid());
     }
 }
-

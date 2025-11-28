@@ -10,6 +10,8 @@ import org.hibernate.annotations.Comment;
 /**
  * Base mapped superclass for entities capturing header and token based create user identifiers.
  * Present on DocumentRequestEntity and ThBatchEntity.
+ *
+ * @author Shailesh Halor
  */
 @MappedSuperclass
 @Getter
@@ -25,4 +27,3 @@ public abstract class DualCreateUidEntity extends TimestampedEntity {
     @Column(name = "CREATE_UID_TOKEN", nullable = false, length = 20, updatable = false)
     private String createUidToken;
 }
-

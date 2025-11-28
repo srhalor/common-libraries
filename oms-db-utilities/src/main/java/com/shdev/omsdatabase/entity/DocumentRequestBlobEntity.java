@@ -24,13 +24,13 @@ import java.io.Serializable;
 public class DocumentRequestBlobEntity implements Serializable {
 
     @Id
-    @Comment("Identifier matching tbom_document_requests.id (1:1); serves as both primary key and foreign key.")
+    @Comment("Identifier matching tbom_document_requests.id (1:1); serves as both primary metadataKey and foreign metadataKey.")
     @Column(name = "OMDRT_ID", nullable = false)
     private Long id;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Identifier matching tbom_document_requests.id (1:1); serves as both primary key and foreign key.")
+    @Comment("Identifier matching tbom_document_requests.id (1:1); serves as both primary metadataKey and foreign metadataKey.")
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "OMDRT_ID", nullable = false)
     private DocumentRequestEntity tbomDocumentRequests;

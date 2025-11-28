@@ -10,6 +10,8 @@ import org.hibernate.annotations.Comment;
 /**
  * Base mapped superclass for entities capturing create and last update user identifiers.
  * Present on DocumentConfigEntity and ReferenceDataEntity.
+ *
+ * @author Shailesh Halor
  */
 @MappedSuperclass
 @Getter

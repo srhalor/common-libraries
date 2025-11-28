@@ -5,8 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.Comment;
 
 import java.time.Instant;
@@ -15,6 +15,8 @@ import java.time.Instant;
  * Base mapped superclass providing common timestamp audit fields present on OMS entities.
  * These timestamps are managed by database triggers (insertable=false, updatable=false) and
  * therefore not set in application code.
+ *
+ * @author Shailesh Halor
  */
 @MappedSuperclass
 @EntityListeners(AuditEntityListener.class)
@@ -31,4 +33,3 @@ public abstract class TimestampedEntity {
     @Column(name = "LAST_UPDATE_DAT", nullable = false, updatable = false, insertable = false)
     private Instant lastUpdateDat;
 }
-

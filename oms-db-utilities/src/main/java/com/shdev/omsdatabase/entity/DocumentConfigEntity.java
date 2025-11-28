@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 /**
- * Entity representing effective-dated document configuration key/value mappings.
+ * Entity representing effective-dated document configuration metadataKey/metadataValue mappings.
  * References tbom_reference_data for footer, application document specification, and configuration code.
  *
  * @author Shailesh Halor
@@ -25,13 +25,13 @@ import java.time.LocalDate;
 @Table(name = "TBOM_DOCUMENT_CONFIGURATIONS")
 @DynamicInsert
 @DynamicUpdate
-@Comment("Effective-dated document configuration key/value mappings. References tbom_reference_data for footer, application document specification, and configuration code.")
+@Comment("Effective-dated document configuration metadataKey/metadataValue mappings. References tbom_reference_data for footer, application document specification, and configuration code.")
 public class DocumentConfigEntity extends SingleAuditUidEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TBOM_DOCUMENT_CONFIGURATIONS_id_gen")
     @SequenceGenerator(name = "TBOM_DOCUMENT_CONFIGURATIONS_id_gen", sequenceName = "SQOMDCN_DOC_CONFIG_ID", allocationSize = 1)
-    @Comment("Primary key for document configuration row.")
+    @Comment("Primary metadataKey for document configuration row.")
     @Column(name = "ID", nullable = false)
     private Long id;
 
@@ -54,12 +54,12 @@ public class DocumentConfigEntity extends SingleAuditUidEntity implements Serial
     private ReferenceDataEntity omrdaCode;
 
     @Size(max = 255)
-    @Comment("Configuration value associated with the DOC_CONFIG_CODE.")
+    @Comment("Configuration metadataValue associated with the DOC_CONFIG_CODE.")
     @Column(name = "VALUE", nullable = false)
     private String value;
 
     @Size(max = 255)
-    @Comment("Optional description of the document configuration value.")
+    @Comment("Optional description of the document configuration metadataValue.")
     @Column(name = "DESCRIPTION")
     private String description;
 

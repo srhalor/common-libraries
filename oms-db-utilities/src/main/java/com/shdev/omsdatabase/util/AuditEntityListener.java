@@ -10,19 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.util.StringUtils;
 
-import static com.shdev.omsdatabase.util.OmsConstants.USER_ID_HEADER;
-import static com.shdev.omsdatabase.util.OmsConstants.USER_ID_TOKEN;
+import static com.shdev.omsdatabase.constants.OmsConstants.USER_ID_HEADER;
+import static com.shdev.omsdatabase.constants.OmsConstants.USER_ID_TOKEN;
 
 /**
- * JPA lifecycle listener to populate audit user fields automatically on persist/update.
- * Looks up user identifiers from thread context (SLF4J MDC) using well-known keys.
- * <p>
- * Keys:
- * - userIdHeader -> CREATE_UID_HEADER
- * - userIdToken  -> CREATE_UID_TOKEN
- * - userId       -> CREATE_UID / LAST_UPDATE_UID
- * <p>
- * This keeps services free of audit boilerplate and avoids Spring dependencies in entities.
+ * JPA Entity Listener to automatically populate audit fields (create and update user IDs) based on MDC values.
  *
  * @author Shailesh Halor
  */
@@ -30,13 +22,13 @@ import static com.shdev.omsdatabase.util.OmsConstants.USER_ID_TOKEN;
 public class AuditEntityListener {
 
     /**
-     * Helper to get value from MDC, treating blank as null
+     * Helper to get metadataValue from MDC, treating blank as null
      *
-     * @param key the MDC key
-     * @return the value or null
+     * @param key the MDC metadataKey
+     * @return the metadataValue or null
      */
     private static String mdc(String key) {
-        log.trace("MDC key: {}", key);
+        log.trace("MDC metadataKey: {}", key);
         var value = MDC.get(key);
         return StringUtils.hasText(value) ? value : null;
 
@@ -58,7 +50,11 @@ public class AuditEntityListener {
         log.trace("Exiting prePersist for entity: {}", entity.getClass().getSimpleName());
     }
 
-    // Applies CREATE_UID_HEADER and CREATE_UID_TOKEN where supported entities are involved
+    /**
+     * Applies CREATE_UID_HEADER and CREATE_UID_TOKEN for entities that use header and token user identifiers.
+     *
+     * @param entity the entity being persisted
+     */
     private static void applyHeaderAndTokenUidCreateFields(Object entity) {
         var headerUid = mdc(USER_ID_HEADER);
         var tokenUid = mdc(USER_ID_TOKEN);
@@ -75,7 +71,11 @@ public class AuditEntityListener {
         }
     }
 
-    // Applies generic CREATE_UID and LAST_UPDATE_UID for entities that use a single user identifier
+    /**
+     * Applies generic CREATE_UID and LAST_UPDATE_UID for entities that use common user identifiers.
+     *
+     * @param entity the entity being persisted
+     */
     private static void applyGenericUidCreateAndUpdateFields(Object entity) {
 
         var genericUid = mdc(USER_ID_HEADER);

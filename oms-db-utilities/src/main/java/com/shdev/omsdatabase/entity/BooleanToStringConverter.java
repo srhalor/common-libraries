@@ -6,6 +6,8 @@ import jakarta.persistence.Converter;
 /**
  * JPA AttributeConverter to persist Java Boolean values as CHAR(1) ('Y' = true, 'N' = false).
  * Auto-applied to all Boolean attributes. Null booleans are stored as 'N' (treat absent as false).
+ *
+ * @author Shailesh Halor
  */
 @Converter(autoApply = true)
 public class BooleanToStringConverter implements AttributeConverter<Boolean, String> {
