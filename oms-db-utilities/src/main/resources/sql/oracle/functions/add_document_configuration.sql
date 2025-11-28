@@ -12,7 +12,7 @@
 -- Notes:
 --   * Active version determined by SYSDATE BETWEEN effect_from_dat AND effect_to_dat.
 --   * A future-dated effect_from_dat creates a new version even when an active one exists.
---   * Relies on get_reference_id(type,name) function to resolve foreign key IDs.
+--   * Relies on get_reference_id(refDataType,refDataValue) function to resolve foreign key IDs.
 --   * Triggers manage ID, timestamps, historization.
 --
 

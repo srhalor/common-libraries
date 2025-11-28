@@ -5,7 +5,7 @@
 --          tbom_th_batches, tbom_error_details
 -- Assumptions:
 --   - Reference data exists (run insert_tbom_reference_data.sql first).
---   - get_reference_id(type,name[,date[,required]]) function exists in the schema.
+--   - get_reference_id(refDataType,refDataValue[,date[,required]]) function exists in the schema.
 -- Boolean conventions:
 --   - sync_status, event_status stored as CHAR(1) with values 'Y'/'N'.
 -- Notes:
@@ -87,7 +87,7 @@ DECLARE
         IF v_id IS NULL THEN
             SELECT sqomrda_ref_data_id.NEXTVAL INTO v_new_id FROM dual;
             INSERT INTO tbom_reference_data (
-                id, ref_data_type, ref_data_name, editable, description,
+                id, ref_data_type, ref_data_value, editable, description,
                 effect_from_dat, effect_to_dat,
                 created_dat, last_update_dat, create_uid, last_update_uid
             ) VALUES (
@@ -108,7 +108,7 @@ DECLARE
         IF v_id IS NULL THEN
             SELECT sqomrda_ref_data_id.NEXTVAL INTO v_new_id FROM dual;
             INSERT INTO tbom_reference_data (
-                id, ref_data_type, ref_data_name, editable, description,
+                id, ref_data_type, ref_data_value, editable, description,
                 effect_from_dat, effect_to_dat,
                 created_dat, last_update_dat, create_uid, last_update_uid
             ) VALUES (

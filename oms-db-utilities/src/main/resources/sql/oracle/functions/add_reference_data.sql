@@ -2,7 +2,7 @@
 -- File: add_reference_data.sql
 -- Purpose: Helper function + convenience procedure to insert (or reuse) tbom_reference_data rows.
 -- Summary:
---   * Function add_reference_data(...) returns the ID of an existing active row (type+name) or inserts a new version.
+--   * Function add_reference_data(...) returns the ID of an existing active row (refDataType+refDataValue) or inserts a new version.
 --   * Supports effect-dated historization (new effect_from_dat creates a new version; triggers close previous version).
 --   * Editable flag stored as 'Y'/'N'. Defaults: effect_from_dat=TRUNC(SYSDATE), effect_to_dat=DATE '4712-12-31'.
 -- Usage Examples:
@@ -17,7 +17,7 @@
 
 CREATE OR REPLACE FUNCTION add_reference_data(
     p_type        IN tbom_reference_data.ref_data_type%TYPE,
-    p_name        IN tbom_reference_data.ref_data_name%TYPE,
+    p_name        IN tbom_reference_data.ref_data_value%TYPE,
     p_editable    IN CHAR DEFAULT 'N',        -- 'Y' or 'N'
     p_description IN tbom_reference_data.description%TYPE DEFAULT NULL,
     p_effect_from IN DATE DEFAULT NULL,
@@ -32,7 +32,7 @@ BEGIN
     SELECT id INTO v_id
     FROM tbom_reference_data r
     WHERE r.ref_data_type = p_type
-      AND r.ref_data_name = p_name
+      AND r.ref_data_value = p_name
       AND SYSDATE BETWEEN r.effect_from_dat AND r.effect_to_dat
     FETCH FIRST 1 ROWS ONLY;
 
@@ -42,7 +42,7 @@ EXCEPTION
         -- Insert new version with explicit audit values
         SELECT sqomrda_ref_data_id.NEXTVAL INTO v_id FROM dual;
         INSERT INTO tbom_reference_data (
-            id, ref_data_type, ref_data_name, editable, description,
+            id, ref_data_type, ref_data_value, editable, description,
             effect_from_dat, effect_to_dat,
             created_dat, last_update_dat, create_uid, last_update_uid
         ) VALUES (
@@ -60,7 +60,7 @@ END add_reference_data;
 -- Convenience procedure variant (no return)
 CREATE OR REPLACE PROCEDURE add_reference_data_proc(
     p_type        IN tbom_reference_data.ref_data_type%TYPE,
-    p_name        IN tbom_reference_data.ref_data_name%TYPE,
+    p_name        IN tbom_reference_data.ref_data_value%TYPE,
     p_editable    IN CHAR DEFAULT 'N',
     p_description IN tbom_reference_data.description%TYPE DEFAULT NULL,
     p_effect_from IN DATE DEFAULT NULL,

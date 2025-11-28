@@ -43,7 +43,7 @@ CREATE TABLE tbom_reference_data
 (
     id              NUMBER PRIMARY KEY,
     ref_data_type   VARCHAR2(50)        NOT NULL,
-    ref_data_name   VARCHAR2(100)       NOT NULL,
+    ref_data_value  VARCHAR2(100)       NOT NULL,
     editable        CHAR(1) DEFAULT 'N' NOT NULL,
     description     VARCHAR2(255),
     effect_from_dat DATE                NOT NULL,
@@ -58,9 +58,9 @@ CREATE TABLE tbom_reference_data
 COMMENT ON TABLE tbom_reference_data IS 'Central table to store reference data values used by oms system (document types, document names, metadata keys, source systems, etc.).';
 COMMENT ON COLUMN tbom_reference_data.id IS 'Primary Key for reference data.';
 COMMENT ON COLUMN tbom_reference_data.ref_data_type IS 'Type of reference data (e.g. DOCUMENT_TYPE, DOCUMENT_NAME, METADATA_KEY, SOURCE_SYSTEM).';
-COMMENT ON COLUMN tbom_reference_data.ref_data_name IS 'Name or value of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).';
-COMMENT ON COLUMN tbom_reference_data.ref_data_name IS 'Name or value of the reference data (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).';
-COMMENT ON COLUMN tbom_reference_data.description IS 'Optional description for the reference data value.';
+COMMENT ON COLUMN tbom_reference_data.ref_data_value IS 'Value for the reference data type (e.g. Invoice, IVZRECPA, 103, IV, MetadataKey1).';
+COMMENT ON COLUMN tbom_reference_data.editable IS 'Y/N flag indicating whether the reference data is editable or not.';
+COMMENT ON COLUMN tbom_reference_data.description IS 'Optional description for the reference data metadataValue.';
 COMMENT ON COLUMN tbom_reference_data.effect_from_dat IS 'Date from which this reference is effective.';
 COMMENT ON COLUMN tbom_reference_data.effect_to_dat IS 'Date till which this reference is effective.';
 COMMENT ON COLUMN tbom_reference_data.created_dat IS 'Record creation timestamp.';
@@ -70,7 +70,7 @@ COMMENT ON COLUMN tbom_reference_data.last_update_uid IS 'User ID who last updat
 
 -- Create indexes
 CREATE INDEX omrda_01 ON tbom_reference_data (ref_data_type);
-CREATE INDEX omrda_02 ON tbom_reference_data (ref_data_name);
+CREATE INDEX omrda_02 ON tbom_reference_data (ref_data_value);
 CREATE INDEX omrda_03 ON tbom_reference_data (effect_from_dat);
 CREATE INDEX omrda_04 ON tbom_reference_data (effect_to_dat);
 
@@ -82,7 +82,7 @@ CREATE OR REPLACE TRIGGER omrda_01t_bir_bur
     TYPE t_key_rec IS RECORD
                       (
                           ref_type tbom_reference_data.ref_data_type%TYPE,
-                          ref_name tbom_reference_data.ref_data_name%TYPE,
+                          ref_name tbom_reference_data.ref_data_value%TYPE,
                           rec_id   tbom_reference_data.id%TYPE,
                           eff_from tbom_reference_data.effect_from_dat%TYPE
                       );
@@ -123,7 +123,7 @@ BEGIN
     -- collect keys for post-statement historization (only for insert/update)
     g_keys.EXTEND;
     g_keys(g_keys.COUNT).ref_type := :NEW.ref_data_type;
-    g_keys(g_keys.COUNT).ref_name := :NEW.ref_data_name;
+    g_keys(g_keys.COUNT).ref_name := :NEW.ref_data_value;
     g_keys(g_keys.COUNT).rec_id := :NEW.id;
     g_keys(g_keys.COUNT).eff_from := :NEW.effect_from_dat;
 END BEFORE EACH ROW;
@@ -137,7 +137,7 @@ END BEFORE EACH ROW;
                     UPDATE tbom_reference_data
                     SET effect_to_dat = g_keys(i).eff_from - (1 / 86400)
                     WHERE ref_data_type = g_keys(i).ref_type
-                      AND ref_data_name = g_keys(i).ref_name
+                      AND ref_data_value = g_keys(i).ref_name
                       AND id <> g_keys(i).rec_id
                       AND effect_to_dat >= g_keys(i).eff_from;
                 END LOOP;

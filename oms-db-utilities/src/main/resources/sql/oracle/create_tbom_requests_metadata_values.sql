@@ -2,7 +2,7 @@
 -- File: create_tbom_requests_metadata_values.sql
 -- Purpose: Create tbom_requests_metadata_values to store actual metadata values per document request.
 -- Notes: Each row maps one request (omdrt_id) to one metadata key (omrda_id) with a concrete value.
---        omrda_id references tbom_reference_data entries of type METADATA_KEY. No ON DELETE CASCADE.
+--        omrda_id references tbom_reference_data entries of refDataType METADATA_KEY. No ON DELETE CASCADE.
 -- Dependencies: Requires tbom_document_requests and tbom_reference_data to exist.
 -- Changelog:
 --   2025-10-23 - Initial version.
