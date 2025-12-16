@@ -4,6 +4,7 @@ import com.shdev.omsdatabase.dto.DocumentConfigInDto;
 import com.shdev.omsdatabase.dto.DocumentConfigOutDto;
 import com.shdev.omsdatabase.entity.DocumentConfigEntity;
 import com.shdev.omsdatabase.entity.ReferenceDataEntity;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,21 +16,23 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Unit tests for DocumentConfigurationMapper.
+ * Unit tests for {@link DocumentConfigurationMapper} covering create, read, and partial update mappings.
  */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = MapperTestConfig.class)
+@DisplayName("DocumentConfigurationMapper unit tests")
 class DocumentConfigurationMapperTest {
 
     @Autowired
     private DocumentConfigurationMapper mapper;
 
     @Test
+    @DisplayName("toEntity: creates entity with reference IDs and value fields")
     void toEntity_createMapping_populatesReferenceEntities() {
         DocumentConfigInDto dto = new DocumentConfigInDto(
                 1L, 2L, 3L,
                 "VAL", "Desc",
-                LocalDate.of(2024,1,1), LocalDate.of(2024,12,31)
+                LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
         );
         DocumentConfigEntity entity = mapper.toEntity(dto);
         assertThat(entity.getOmrdaFooter()).isNotNull();
@@ -38,11 +41,12 @@ class DocumentConfigurationMapperTest {
         assertThat(entity.getOmrdaCode().getId()).isEqualTo(3L);
         assertThat(entity.getValue()).isEqualTo("VAL");
         assertThat(entity.getDescription()).isEqualTo("Desc");
-        assertThat(entity.getEffectFromDat()).isEqualTo(LocalDate.of(2024,1,1));
-        assertThat(entity.getEffectToDat()).isEqualTo(LocalDate.of(2024,12,31));
+        assertThat(entity.getEffectFromDat()).isEqualTo(LocalDate.of(2024, 1, 1));
+        assertThat(entity.getEffectToDat()).isEqualTo(LocalDate.of(2024, 12, 31));
     }
 
     @Test
+    @DisplayName("toDto: flattens nested reference data into DTO")
     void toDto_mapsNestedReferenceData() {
         DocumentConfigEntity e = new DocumentConfigEntity();
         e.setId(10L);
@@ -51,8 +55,8 @@ class DocumentConfigurationMapperTest {
         e.setOmrdaCode(ReferenceDataEntity.builder().id(7L).refDataValue("CODE").description("CodeDesc").build());
         e.setValue("CONFIG_VAL");
         e.setDescription("Config description");
-        e.setEffectFromDat(LocalDate.of(2024,1,1));
-        e.setEffectToDat(LocalDate.of(2024,12,31));
+        e.setEffectFromDat(LocalDate.of(2024, 1, 1));
+        e.setEffectToDat(LocalDate.of(2024, 12, 31));
 
         DocumentConfigOutDto dto = mapper.toDto(e);
         assertThat(dto.id()).isEqualTo(10L);
@@ -62,7 +66,14 @@ class DocumentConfigurationMapperTest {
         assertThat(dto.desc()).isEqualTo("Config description");
     }
 
+    /**
+     * Test: updateEntity applies partial update ignoring null fields
+     * Given: Existing DocumentConfigEntity with all fields populated and patch DTO with selective updates
+     * When: updateEntity is called
+     * Then: Only non-null fields from DTO are applied, existing values remain for null fields
+     */
     @Test
+    @DisplayName("updateEntity: ignores nulls and updates only provided fields")
     void updateEntity_partialUpdate_ignoresNullsAndUpdatesProvidedFields() {
         DocumentConfigEntity existing = new DocumentConfigEntity();
         existing.setOmrdaFooter(ReferenceDataEntity.builder().id(11L).build());
@@ -70,8 +81,8 @@ class DocumentConfigurationMapperTest {
         existing.setOmrdaCode(ReferenceDataEntity.builder().id(13L).build());
         existing.setValue("OLD_VAL");
         existing.setDescription("OLD_DESC");
-        existing.setEffectFromDat(LocalDate.of(2024,1,1));
-        existing.setEffectToDat(LocalDate.of(2024,6,30));
+        existing.setEffectFromDat(LocalDate.of(2024, 1, 1));
+        existing.setEffectToDat(LocalDate.of(2024, 6, 30));
 
         DocumentConfigInDto patch = new DocumentConfigInDto(
                 null,
@@ -80,7 +91,7 @@ class DocumentConfigurationMapperTest {
                 "NEW_VAL",
                 null,
                 null,
-                LocalDate.of(2024,12,31)
+                LocalDate.of(2024, 12, 31)
         );
 
         mapper.updateEntity(patch, existing);
@@ -90,7 +101,7 @@ class DocumentConfigurationMapperTest {
         assertThat(existing.getOmrdaCode().getId()).isEqualTo(13L);
         assertThat(existing.getValue()).isEqualTo("NEW_VAL");
         assertThat(existing.getDescription()).isEqualTo("OLD_DESC");
-        assertThat(existing.getEffectFromDat()).isEqualTo(LocalDate.of(2024,1,1));
-        assertThat(existing.getEffectToDat()).isEqualTo(LocalDate.of(2024,12,31));
+        assertThat(existing.getEffectFromDat()).isEqualTo(LocalDate.of(2024, 1, 1));
+        assertThat(existing.getEffectToDat()).isEqualTo(LocalDate.of(2024, 12, 31));
     }
 }

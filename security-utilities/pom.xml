@@ -14,15 +14,32 @@
   <packaging>jar</packaging>
 
   <dependencies>
-    <!-- Using common-utilities without explicit version (managed by parent BOM) -->
+    <!-- Standard Spring Boot starters -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- Shared libraries (no versions, managed by libraries-parent) -->
     <dependency>
       <groupId>com.shdev</groupId>
       <artifactId>common-utilities</artifactId>
     </dependency>
 
+    <!-- Optional extras / tests -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

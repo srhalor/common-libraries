@@ -13,7 +13,11 @@ import org.mapstruct.*;
  *
  * @author Shailesh Halor
  */
-@Mapper(componentModel = "spring", uses = {ReferenceDataMapper.class, DocumentRequestMapper.class})
+@Mapper(
+        componentModel = "spring",
+        uses = {ReferenceDataMapper.class, DocumentRequestMapper.class},
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+)
 public interface ThBatchMapper {
 
     /**
@@ -30,7 +34,7 @@ public interface ThBatchMapper {
     /**
      * Convert DTO to entity for create operations.
      * Creates new entity with associated request and reference data entities built from IDs.
-     * Audit fields (createdDat, createUid, etc.) are handled by JPA lifecycle listeners.
+     * Audit fields are handled by JPA lifecycle listeners.
      *
      * @param dto the TH batch DTO
      * @return a new TH batch entity
@@ -44,7 +48,7 @@ public interface ThBatchMapper {
     /**
      * Partially update an existing entity from DTO for update operations.
      * Only non-null fields from the DTO are applied to the entity.
-     * Audit fields (lastUpdateDat, lastUpdateUid) are handled by JPA lifecycle listeners.
+     * Audit fields are handled by JPA lifecycle listeners.
      *
      * @param dto    the TH batch DTO with fields to update
      * @param entity the existing entity to update

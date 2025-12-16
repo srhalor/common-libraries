@@ -14,7 +14,11 @@ import org.mapstruct.*;
  *
  * @author Shailesh Halor
  */
-@Mapper(componentModel = "spring", uses = ReferenceDataMapper.class)
+@Mapper(
+        componentModel = "spring",
+        uses = ReferenceDataMapper.class,
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+)
 public interface DocumentConfigurationMapper {
 
     /**
@@ -33,7 +37,7 @@ public interface DocumentConfigurationMapper {
     /**
      * Convert request DTO to entity for create operations.
      * Creates new entity with reference data entities built from IDs.
-     * Audit fields (createdDat, createUid, etc.) are handled by JPA lifecycle listeners.
+     * Audit fields are handled by JPA lifecycle listeners.
      *
      * @param dto the document configuration request DTO
      * @return a new document configuration entity
@@ -47,7 +51,7 @@ public interface DocumentConfigurationMapper {
     /**
      * Partially update an existing entity from request DTO for update operations.
      * Only non-null fields from the DTO are applied to the entity.
-     * Audit fields (lastUpdateDat, lastUpdateUid) are handled by JPA lifecycle listeners.
+     * Audit fields are handled by JPA lifecycle listeners.
      *
      * @param dto    the document configuration request DTO with fields to update
      * @param entity the existing entity to update

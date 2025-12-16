@@ -2,9 +2,10 @@ package com.shdev.omsdatabase.mapper;
 
 import com.shdev.omsdatabase.dto.ThBatchInDto;
 import com.shdev.omsdatabase.dto.ThBatchOutDto;
+import com.shdev.omsdatabase.entity.DocumentRequestEntity;
 import com.shdev.omsdatabase.entity.ReferenceDataEntity;
 import com.shdev.omsdatabase.entity.ThBatchEntity;
-import com.shdev.omsdatabase.entity.DocumentRequestEntity;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +14,20 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Unit tests for {@link ThBatchMapper} verifying create, read, and partial update mappings
+ * between {@link com.shdev.omsdatabase.entity.ThBatchEntity} and its DTOs.
+ */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = MapperTestConfig.class)
+@DisplayName("ThBatchMapper unit tests")
 class ThBatchMapperTest {
 
     @Autowired
     private ThBatchMapper mapper;
 
     @Test
+    @DisplayName("toEntity: creates entity from DTO with all fields populated")
     void toEntity_createMapping_populatesAllFields() {
         ThBatchInDto dto = new ThBatchInDto(100L, 200L, 300L, "BATCH-1", 400L, true, false, 5L);
         ThBatchEntity e = mapper.toEntity(dto);
@@ -37,6 +44,7 @@ class ThBatchMapperTest {
     }
 
     @Test
+    @DisplayName("toDto: flattens nested and simple fields to DTO")
     void toDto_mapsNestedAndSimpleFields() {
         ThBatchEntity e = new ThBatchEntity();
         e.setId(9L);
@@ -62,7 +70,14 @@ class ThBatchMapperTest {
         assertThat(out.retryCount()).isEqualTo(1L);
     }
 
+    /**
+     * Test: updateEntity applies partial update with selective field changes
+     * Given: Existing ThBatchEntity and patch DTO with some null and some updated fields
+     * When: updateEntity is called
+     * Then: Only non-null fields from DTO are updated, null fields are ignored
+     */
     @Test
+    @DisplayName("updateEntity: applies only non-null fields from patch DTO")
     void updateEntity_partialUpdate_appliesOnlyProvidedFields() {
         ThBatchEntity e = new ThBatchEntity();
         e.setOmdrt(DocumentRequestEntity.builder().id(1L).build());
@@ -88,4 +103,3 @@ class ThBatchMapperTest {
         assertThat(e.getRetryCount()).isEqualTo(3L); // updated
     }
 }
-

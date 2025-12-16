@@ -1,103 +1,138 @@
 # common-libraries (Maven monorepo)
 
-Multi-module monorepo for shared libraries used by Spring Boot services. Centralized versioning and Spring Boot alignment live in `libraries-parent`, which inherits `spring-boot-starter-parent`.
+Multi-module monorepo for shared **Spring Boot–aligned** libraries. All common setup and versions live in `libraries-parent`, which itself inherits `spring-boot-starter-parent`.
 
 - Java: 21
-- Parent: `com.shdev:libraries-parent` (inherits `org.springframework.boot:spring-boot-starter-parent`)
-- Modules: `common-utilities`, `security-utilities`, `oms-db-libraries`
-- Artifacts publish with sources and Javadocs attached
+- Shared parent: `com.shdev:libraries-parent:0.1.0`
+- Modules: `common-utilities`, `security-utilities`, `oms-db-utilities`
+- Each library publishes with sources and Javadocs
 
 ---
 
-## 1) Quick start (Windows)
+## 1) Build & install (Windows)
+
+From the repo root (`common-libraries/`):
 
 ```bat
-:: Build and test everything (run from repo root)
-mvnw.cmd -B clean verify
+:: Build, run tests, and install all modules to ~/.m2
+mvnw.cmd clean install
 
-:: Install to local ~/.m2 for trying in another project
-mvnw.cmd -B -DskipTests install
-
-:: Deploy to your repo (needs distributionManagement + settings.xml)
-mvnw.cmd -B -DskipTests deploy
+:: Build only one module plus its required deps
+mvnw.cmd -pl security-utilities -am clean install
 ```
 
-Prereqs
+Prerequisites
 - JDK 21 on PATH
-- Optional for deploy: `~/.m2/settings.xml` with servers matching the ids in `libraries-parent` (internal-releases/internal-snapshots)
+- Maven 3.9+ (or the bundled Maven Wrapper `mvnw.cmd`)
 
 ---
 
-## 2) Structure
-```
+## 2) Project layout
+
+```text
 common-libraries/
-├─ pom.xml                 # root aggregator (no parent logic here)
-├─ libraries-parent/       # shared parent (inherits Spring Boot parent; centralizes versions)
-├─ common-utilities/       # library module (jar)
-├─ security-utilities/     # library module (jar)
-└─ oms-db-libraries/       # library module (jar)
+├─ pom.xml                 # root aggregator (no logic; just lists modules)
+├─ libraries-parent/       # shared parent (inherits Spring Boot parent)
+├─ common-utilities/       # general-purpose helpers (logging, strings, etc.)
+├─ security-utilities/     # security helpers; depends on common-utilities
+└─ oms-db-utilities/       # OMS persistence library (entities, mappers, services)
 ```
 
-Key ideas
-- Root POM only aggregates modules.
-- All modules inherit from `libraries-parent` and do not declare explicit versions for dependencies/plugins covered by Spring Boot parent.
-- Inter-module deps (e.g., `security-utilities` -> `common-utilities`) require no version tags; reactor resolves order automatically.
+Key points
+- **Root POM**: only aggregates modules; does not contain plugin or version logic.
+- **libraries-parent**: single source of truth for:
+  - Spring Boot parent version
+  - Java/Maven constraints
+  - MapStruct / annotation processing config
+  - Internal library versions (`common-utilities`, `security-utilities`, `oms-db-utilities`).
+- **Libraries can use each other** without specifying versions (managed by `libraries-parent`).
 
 ---
 
-## 3) Use in a Spring Boot host (no Spring Boot parent in service)
+## 3) Using the parent in a microservice
 
-Important
-- In consumer services, always pin explicit released versions (X.Y.Z). Do not rely on repository-internal properties.
+For a new Spring Boot microservice (e.g. `monitoring-service`), point its `pom.xml` to `libraries-parent` and then add library dependencies **without** explicit versions.
 
-Add this to your service `pom.xml`:
 ```xml
-<parent>
-  <groupId>com.shdev</groupId>
-  <artifactId>libraries-parent</artifactId>
-  <version>X.Y.Z</version> <!-- use a released version from your repo -->
-  <relativePath/>
-</parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-<dependencies>
-  <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-web</artifactId>
-  </dependency>
-  <dependency>
+  <parent>
     <groupId>com.shdev</groupId>
-    <artifactId>common-utilities</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>com.shdev</groupId>
-    <artifactId>security-utilities</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>com.shdev</groupId>
-    <artifactId>oms-db-libraries</artifactId>
-  </dependency>
-</dependencies>
+    <artifactId>libraries-parent</artifactId>
+    <version>0.1.0</version>  <!-- use a released version from your repo -->
+    <relativePath/>           <!-- resolve from local/remote repo -->
+  </parent>
 
-<build>
-  <plugins>
-    <plugin>
+  <artifactId>monitoring-service</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>monitoring-service</name>
+
+  <dependencies>
+    <!-- Standard Spring Boot starters -->
+    <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-maven-plugin</artifactId>
-    </plugin>
-  </plugins>
-</build>
-```
-Why this works: `libraries-parent` already inherits Spring Boot’s parent, so your service doesn’t need `spring-boot-starter-parent`.
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
 
-Alternative (service already has a different parent)
-- If your service must keep a different parent (e.g., it already uses Spring Boot’s parent), import our dependency management as a BOM and keep your existing parent. Pin a concrete version.
+    <!-- Shared libraries (no versions, managed by libraries-parent) -->
+    <dependency>
+      <groupId>com.shdev</groupId>
+      <artifactId>common-utilities</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.shdev</groupId>
+      <artifactId>security-utilities</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.shdev</groupId>
+      <artifactId>oms-db-utilities</artifactId>
+    </dependency>
+
+    <!-- Optional extras / tests -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-devtools</artifactId>
+      <scope>runtime</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+```
+
+Why this works
+- `libraries-parent` already inherits `spring-boot-starter-parent`, so the service **does not** need its own Spring Boot parent.
+- Internal libraries’ versions are managed via `<dependencyManagement>` in `libraries-parent` (`shdev.libraries.version`).
+
+If a service must keep a different parent (e.g. an existing corporate parent):
+
 ```xml
 <dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>com.shdev</groupId>
       <artifactId>libraries-parent</artifactId>
-      <version>X.Y.Z</version>
+      <version>0.1.0</version>   <!-- pinned BOM version -->
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -115,66 +150,53 @@ Alternative (service already has a different parent)
   </dependency>
   <dependency>
     <groupId>com.shdev</groupId>
-    <artifactId>oms-db-libraries</artifactId>
+    <artifactId>oms-db-utilities</artifactId>
   </dependency>
 </dependencies>
 ```
 
 ---
 
-## 4) Version management (single source of truth in libraries-parent)
-All internal library versions are centralized in `libraries-parent`.
+## 4) Version management (single source of truth)
 
-- Children declare their parent with an explicit version, and typically inherit their own `<version>` from the parent:
+All internal library versions are centralized in `libraries-parent`:
+
+- Children declare their parent version and normally **inherit** their own `<version>` from it:
   ```xml
   <parent>
     <groupId>com.shdev</groupId>
     <artifactId>libraries-parent</artifactId>
-    <version>X.Y.Z</version>
+    <version>0.1.0</version>
     <relativePath>../libraries-parent/pom.xml</relativePath>
   </parent>
   ```
-- Inter-module dependencies are versionless; they are managed by `libraries-parent` via dependencyManagement.
+- Inter-module dependencies (e.g. `security-utilities` → `common-utilities`) omit `<version>` and rely on `<dependencyManagement>` in `libraries-parent`.
 
-Common tasks (Windows CMD)
+Typical maintenance flow (from `common-libraries/`):
+
 ```bat
-:: Show current libraries-parent version (from repo root)
+:: See current libraries-parent version
 mvnw.cmd -q -pl libraries-parent -DforceStdout help:evaluate -Dexpression=project.version
 
-:: Bump libraries-parent version to 0.1.1 and update child POMs to use it
-mvnw.cmd -B -pl libraries-parent -am versions:set -DnewVersion=0.1.1 -DgenerateBackupPoms=false
-mvnw.cmd -B versions:update-parent -DparentVersion=[0.1.1] -DgenerateBackupPoms=false -DallowSnapshots=true
-
-:: (Optional) Verify effective managed version for internal libs
-mvnw.cmd -q -pl libraries-parent -DforceStdout help:evaluate -Dexpression=shdev.libraries.version
+:: Bump libraries-parent (and property shdev.libraries.version) to 0.1.1 and update children
+mvnw.cmd -pl libraries-parent -am versions:set -DnewVersion=0.1.1 -DgenerateBackupPoms=false
+mvnw.cmd versions:update-parent -DparentVersion=[0.1.1] -DgenerateBackupPoms=false -DallowSnapshots=true
 ```
-Notes
-- Do not edit child modules’ `<version>` unless you have a reason; they inherit the parent version.
-- After bumping `libraries-parent`, ensure all child POMs point to the new parent version (the commands above handle this).
-- For Spring Boot upgrades, update the literal `<parent><version>` in `libraries-parent` and keep other changes property-driven.
+
+Guidelines
+- Prefer updating versions in `libraries-parent` instead of editing child POMs directly.
+- For Spring Boot upgrades, change the `<parent><version>` in `libraries-parent` and let children inherit.
 
 ---
 
-## 5) Selective builds and deploys (advanced)
-Build or deploy only one module (reactor builds its prerequisites too):
-```bat
-:: Build only security-utilities and its local deps
-mvnw.cmd -B -pl security-utilities -am clean install
+## 5) Publishing to Nexus (optional)
 
-:: Deploy only common-utilities (ensure parent expectations before publishing it)
-mvnw.cmd -B -pl common-utilities -am -DskipTests deploy
-```
-Caution
-- If you publish the parent at version X.Y.Z, consumers may expect all listed modules to exist at X.Y.Z. Either deploy all modules, or delay publishing until all artifacts are uploaded.
+`libraries-parent/pom.xml` defines `distributionManagement` for ShDev Nexus:
+- Releases: `internal-releases` → `https://nexus.shdev.local/repository/maven-releases/`
+- Snapshots: `internal-snapshots` → `https://nexus.shdev.local/repository/maven-snapshots/`
 
----
+Example `~/.m2/settings.xml`:
 
-## 6) Publishing
-`libraries-parent/pom.xml` contains placeholder distributionManagement pointing to ShDev Nexus:
-- Releases id: `internal-releases` -> `https://nexus.shdev.local/repository/maven-releases/`
-- Snapshots id: `internal-snapshots` -> `https://nexus.shdev.local/repository/maven-snapshots/`
-
-Example settings.xml (CI or local)
 ```xml
 <settings>
   <servers>
@@ -191,27 +213,29 @@ Example settings.xml (CI or local)
   </servers>
 </settings>
 ```
-Deploy
+
+Deploy (from `common-libraries/`):
+
 ```bat
-:: Snapshot or release (based on project version suffix)
-mvnw.cmd -B -DskipTests deploy
+mvnw.cmd -DskipTests deploy
 ```
-Artifacts include `-sources.jar` and `-javadoc.jar` for better IDE/repo browsing.
+
+Artifacts for each module include `-sources.jar` and `-javadoc.jar` for better IDE and repository browsing.
 
 ---
 
-## 7) FAQ
-- Q: Do I need to update each module’s POM on version bumps?
-  - A: Update `libraries-parent` version and make sure child POMs’ `<parent><version>` matches. Children typically inherit their own `<version>` from the parent.
-- Q: Can a module use another (e.g., `security-utilities` use `common-utilities`)?
-  - A: Yes. Declare the dependency without a version; the parent/BOM manages it and the reactor computes build order.
-- Q: Do I have to release all modules when only one changes?
-  - A: Recommended yes for consistency, especially if you publish the BOM. Selective deploy is possible but manage BOM expectations carefully.
-- Q: How do I consume these libraries without switching my service’s parent?
-  - A: Keep your current parent and import `com.shdev:libraries-parent` as a BOM (type pom, scope import) at a fixed version; then add the library dependencies without versions.
+## 6) FAQ (short)
 
----
+- **Can one library use another (e.g. security → common)?**  
+  Yes. Just add the dependency without a version; `libraries-parent` manages it.
 
-## 8) Useful references
-- Parent POM: `libraries-parent/pom.xml` (central properties and dependencyManagement)
-- Design doc: `design/requirement.md` (concise repo requirements and CI notes)
+- **How do services use these libraries?**  
+  Either:
+  - Use `libraries-parent` as the service parent, or
+  - Import `libraries-parent` as a BOM in `<dependencyManagement>`.
+
+- **Do I have to release all modules together?**  
+  Recommended: yes, so the BOM (`libraries-parent`) version always refers to a consistent set of library artifacts.
+
+- **Do services share the same version as libraries?**  
+  No. Services have their own `<version>`; libraries share the version driven by `libraries-parent` (via `shdev.libraries.version`).
