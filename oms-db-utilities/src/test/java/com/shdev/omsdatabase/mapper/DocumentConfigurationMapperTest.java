@@ -14,6 +14,9 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Unit tests for DocumentConfigurationMapper.
+ */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = MapperTestConfig.class)
 class DocumentConfigurationMapperTest {
