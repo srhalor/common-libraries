@@ -1,12 +1,15 @@
 package com.shdev.security.filter;
 
 import com.shdev.common.constants.HeaderConstants;
-import com.shdev.common.util.HeaderValidator;
-import com.shdev.common.util.MdcUtil;
 import com.shdev.security.authentication.JwtAuthenticationToken;
+import com.shdev.security.constants.SecurityConstants;
 import com.shdev.security.dto.TokenInfoDto;
+import com.shdev.security.exception.TokenValidationException;
 import com.shdev.security.service.JwtValidationService;
-import com.shdev.security.util.FilterErrorResponseUtil;
+import com.shdev.security.util.JwtTokenUtil;
+import com.shdev.security.util.SecurityErrorResponseUtil;
+import com.shdev.security.util.SecurityMdcUtil;
+import com.shdev.security.util.PathMatcher;
 import com.shdev.security.util.RoleParser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,7 +19,6 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -62,7 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.info("=== JWT Authentication Filter - START ===");
         log.info("Request: {} {}", method, path);
 
-        if (isExcludedPath(path)) {
+        if (PathMatcher.isExcluded(path, excludedPaths)) {
             log.info("Path '{}' is in excluded paths - SKIPPING JWT validation", path);
             filterChain.doFilter(request, response);
             return;
@@ -71,19 +73,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.debug("Path '{}' NOT excluded - checking for JWT token", path);
 
         String authHeader = request.getHeader(HeaderConstants.AUTHORIZATION);
-        String token = HeaderValidator.extractBearerToken(authHeader);
+        String token = JwtTokenUtil.extractBearerToken(authHeader);
 
         // If no token present, return 401 Unauthorized
         if (token == null) {
             log.warn("❌ AUTHENTICATION REQUIRED - Missing JWT token for path: {}", path);
-            FilterErrorResponseUtil.sendUnauthorizedError(
+            SecurityErrorResponseUtil.sendUnauthorizedError(
                     response,
-                    "Authentication required. Please provide a valid JWT token.",
+                    SecurityConstants.ERROR_MISSING_TOKEN,
                     path);
             return;
         }
 
         log.debug("JWT token extracted successfully (length: {})", token.length());
+
+        // Validate JWT format before calling security-service
+        if (!JwtTokenUtil.hasValidJwtFormat(token)) {
+            log.warn("❌ INVALID TOKEN FORMAT - Token does not match JWT structure for path: {}", path);
+            SecurityErrorResponseUtil.sendUnauthorizedError(
+                    response,
+                    SecurityConstants.ERROR_INVALID_TOKEN_FORMAT,
+                    path);
+            return;
+        }
+
+        log.debug("JWT token format validated successfully");
 
         try {
             String identityDomain = request.getHeader(HeaderConstants.OAUTH_IDENTITY_DOMAIN_NAME);
@@ -94,7 +108,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.info("✅ JWT token validated successfully");
 
             // Add token info to MDC for logging/auditing
-            addToMdc(tokenInfo);
+            SecurityMdcUtil.addTokenInfoToMdc(tokenInfo);
 
             // Extract roles from userRole field and set Spring Security context
             Collection<GrantedAuthority> authorities = RoleParser.parseAndConvertToAuthorities(tokenInfo.userRole());
@@ -107,63 +121,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.info("=== JWT Authentication Filter - PASSED ===");
             filterChain.doFilter(request, response);
 
-        } catch (JwtValidationService.TokenValidationException e) {
+        } catch (TokenValidationException e) {
             log.error("❌ AUTHENTICATION FAILED - JWT validation failed for path: {}", path);
             log.error("Error details: {}", e.getMessage());
             SecurityContextHolder.clearContext();
-            FilterErrorResponseUtil.sendUnauthorizedError(
+            SecurityErrorResponseUtil.sendUnauthorizedError(
                     response,
-                    "Token validation failed: " + e.getMessage(),
+                    e.getMessage(),
                     path);
         } finally {
-            clearMdc();
+            SecurityMdcUtil.clearTokenInfoFromMdc();
         }
-    }
-
-    /**
-     * Add token information to MDC for logging and auditing.
-     */
-    private void addToMdc(TokenInfoDto tokenInfo) {
-        if (StringUtils.hasText(tokenInfo.subject())) {
-            MdcUtil.put(HeaderConstants.MDC_USER_ID_TOKEN, tokenInfo.subject());
-            log.debug("Added subject to MDC: {}", tokenInfo.subject());
-        }
-
-        if (StringUtils.hasText(tokenInfo.client())) {
-            MdcUtil.put(HeaderConstants.MDC_CLIENT, tokenInfo.client());
-            log.debug("Added client to MDC: {}", tokenInfo.client());
-        }
-
-        if (StringUtils.hasText(tokenInfo.domain())) {
-            MdcUtil.put(HeaderConstants.MDC_DOMAIN, tokenInfo.domain());
-            log.debug("Added domain to MDC: {}", tokenInfo.domain());
-        }
-    }
-
-    /**
-     * Clear MDC values set by this filter.
-     */
-    private void clearMdc() {
-        MdcUtil.remove(HeaderConstants.MDC_USER_ID_TOKEN);
-        MdcUtil.remove(HeaderConstants.MDC_CLIENT);
-        MdcUtil.remove(HeaderConstants.MDC_DOMAIN);
-    }
-
-    /**
-     * Check if the given path should be excluded from JWT validation.
-     */
-
-    private boolean isExcludedPath(String path) {
-        return excludedPaths.stream().anyMatch(pattern -> pathMatches(path, pattern));
-    }
-
-    private boolean pathMatches(String path, String pattern) {
-        if (pattern.endsWith("/**")) {
-            String prefix = pattern.substring(0, pattern.length() - 3);
-            return path.startsWith(prefix);
-        }
-        return path.equals(pattern) || path.startsWith(pattern + "/");
     }
 
 }
-

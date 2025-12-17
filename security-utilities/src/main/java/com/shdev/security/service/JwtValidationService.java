@@ -2,7 +2,10 @@ package com.shdev.security.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shdev.common.constants.HeaderConstants;
+import com.shdev.security.constants.SecurityConstants;
 import com.shdev.security.dto.TokenInfoDto;
+import com.shdev.security.exception.TokenValidationException;
+import com.shdev.security.util.ErrorMessageExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -11,7 +14,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+
 
 /**
  * Service for validating JWT tokens with security-service.
@@ -57,7 +62,7 @@ public class JwtValidationService {
             TokenInfoDto tokenInfo = response.getBody();
 
             if (tokenInfo == null) {
-                throw new TokenValidationException("Empty response from security-service");
+                throw new TokenValidationException(SecurityConstants.ERROR_EMPTY_VALIDATION_RESPONSE);
             }
 
             log.debug("Token validated successfully. Subject: {}, UserRole: {}",
@@ -65,22 +70,13 @@ public class JwtValidationService {
 
             return tokenInfo;
 
+        } catch (HttpClientErrorException e) {
+            String errorMessage = ErrorMessageExtractor.extractErrorMessage(e, objectMapper);
+            log.error("Token validation failed: {}", errorMessage);
+            throw new TokenValidationException(errorMessage, e);
         } catch (Exception e) {
-            log.error("Token validation failed: {}", e.getMessage());
-            throw new TokenValidationException("Token validation failed: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Exception thrown when token validation fails.
-     */
-    public static class TokenValidationException extends RuntimeException {
-        public TokenValidationException(String message) {
-            super(message);
-        }
-
-        public TokenValidationException(String message, Throwable cause) {
-            super(message, cause);
+            log.error("Token validation failed: ", e);
+            throw new TokenValidationException(SecurityConstants.ERROR_TOKEN_VALIDATION_FAILED, e);
         }
     }
 }

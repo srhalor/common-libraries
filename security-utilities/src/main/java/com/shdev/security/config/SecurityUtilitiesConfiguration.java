@@ -3,6 +3,8 @@ package com.shdev.security.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shdev.security.filter.JwtAuthenticationFilter;
 import com.shdev.security.filter.OriginHeadersFilter;
+import com.shdev.security.handler.CustomAccessDeniedHandler;
+import com.shdev.security.handler.CustomAuthenticationEntryPoint;
 import com.shdev.security.service.JwtValidationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -75,6 +77,26 @@ public class SecurityUtilitiesConfiguration {
                 properties.getExcludedPaths(),
                 properties.isStrictHeaderMode()
         );
+    }
+
+    /**
+     * Provides CustomAccessDeniedHandler bean.
+     * This handler returns proper JSON response for 403 Forbidden errors.
+     * Note: The @Component annotation on the handler class itself won't work
+     * because it needs ObjectMapper, so we create it here explicitly.
+     */
+    @Bean
+    public CustomAccessDeniedHandler customAccessDeniedHandler(ObjectMapper objectMapper) {
+        return new CustomAccessDeniedHandler();
+    }
+
+    /**
+     * Provides CustomAuthenticationEntryPoint bean.
+     * This handler returns proper JSON response for 401 Unauthorized errors.
+     */
+    @Bean
+    public CustomAuthenticationEntryPoint customAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        return new CustomAuthenticationEntryPoint();
     }
 }
 

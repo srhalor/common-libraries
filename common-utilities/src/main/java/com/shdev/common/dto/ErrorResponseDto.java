@@ -1,5 +1,6 @@
 package com.shdev.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -16,7 +17,9 @@ import java.util.Map;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponseDto(
-        @JsonProperty("timestamp") Instant timestamp,
+        @JsonProperty("timestamp")
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+        Instant timestamp,
         @JsonProperty("status") int status,
         @JsonProperty("error") String error,
         @JsonProperty("error_description") String errorDescription,

@@ -1,8 +1,10 @@
 package com.shdev.security.filter;
 
 import com.shdev.common.constants.HeaderConstants;
-import com.shdev.common.util.MdcUtil;
-import com.shdev.security.util.FilterErrorResponseUtil;
+import com.shdev.security.constants.SecurityConstants;
+import com.shdev.security.util.SecurityErrorResponseUtil;
+import com.shdev.security.util.SecurityMdcUtil;
+import com.shdev.security.util.PathMatcher;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,7 +44,7 @@ public class OriginHeadersFilter extends OncePerRequestFilter {
         log.info("=== Origin Headers Filter - START ===");
         log.info("Request: {} {}", method, path);
 
-        if (isExcludedPath(path)) {
+        if (PathMatcher.isExcluded(path, excludedPaths)) {
             log.info("Path '{}' is in excluded paths - SKIPPING header validation", path);
             filterChain.doFilter(request, response);
             return;
@@ -68,49 +70,24 @@ public class OriginHeadersFilter extends OncePerRequestFilter {
                     log.warn("Headers: Service={}, Application={}, User={}",
                             originService != null, originApplication != null, originUser != null);
 
-                    FilterErrorResponseUtil.sendBadRequestError(
+                    SecurityErrorResponseUtil.sendBadRequestError(
                             response,
-                            "Missing required origin headers: Atradius-Origin-Service, Atradius-Origin-Application, Atradius-Origin-User",
+                            SecurityConstants.ERROR_MISSING_ORIGIN_HEADERS,
                             path);
                     return;
                 }
             }
 
-            if (StringUtils.hasText(originService)) {
-                MdcUtil.put(HeaderConstants.MDC_ORIGIN_SERVICE, originService);
-                log.debug("Added {} to MDC: {}", HeaderConstants.ATRADIUS_ORIGIN_SERVICE, originService);
-            }
-
-            if (StringUtils.hasText(originApplication)) {
-                MdcUtil.put(HeaderConstants.MDC_ORIGIN_APPLICATION, originApplication);
-                log.debug("Added {} to MDC: {}", HeaderConstants.ATRADIUS_ORIGIN_APPLICATION, originApplication);
-            }
-
-            if (StringUtils.hasText(originUser)) {
-                MdcUtil.put(HeaderConstants.MDC_USER_ID_HEADER, originUser);
-                log.debug("Added {} to MDC: {}", HeaderConstants.ATRADIUS_ORIGIN_USER, originUser);
-            }
+            // Add origin headers to MDC
+            SecurityMdcUtil.addOriginHeadersToMdc(originService, originApplication, originUser);
 
             log.info("✅ Origin Headers Filter - PASSED");
             filterChain.doFilter(request, response);
 
         } finally {
-            MdcUtil.remove(HeaderConstants.MDC_ORIGIN_SERVICE);
-            MdcUtil.remove(HeaderConstants.MDC_ORIGIN_APPLICATION);
-            MdcUtil.remove(HeaderConstants.MDC_USER_ID_HEADER);
+            SecurityMdcUtil.clearOriginHeadersFromMdc();
         }
     }
 
-    private boolean isExcludedPath(String path) {
-        return excludedPaths.stream().anyMatch(pattern -> pathMatches(path, pattern));
-    }
-
-    private boolean pathMatches(String path, String pattern) {
-        if (pattern.endsWith("/**")) {
-            String prefix = pattern.substring(0, pattern.length() - 3);
-            return path.startsWith(prefix);
-        }
-        return path.equals(pattern) || path.startsWith(pattern + "/");
-    }
 }
 
