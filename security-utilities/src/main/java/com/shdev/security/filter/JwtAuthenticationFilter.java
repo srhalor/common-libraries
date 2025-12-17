@@ -74,17 +74,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        log.debug("Path '{}' NOT excluded - JWT validation REQUIRED", path);
+        log.debug("Path '{}' NOT excluded - checking for JWT token", path);
 
         String authHeader = request.getHeader(HeaderConstants.AUTHORIZATION);
-        log.debug("Authorization header present: {}", authHeader != null);
-
         String token = HeaderValidator.extractBearerToken(authHeader);
 
+        // If no token present, let Spring Security handle it (may be public endpoint)
         if (token == null) {
-            log.warn("❌ AUTHENTICATION FAILED - Missing or invalid Authorization header for path: {}", path);
-            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "invalid_token",
-                            "Missing or invalid Authorization header");
+            log.debug("No JWT token found - passing to Spring Security for authorization decision");
+            filterChain.doFilter(request, response);
             return;
         }
 
