@@ -1,51 +1,202 @@
-# common-libraries (Maven monorepo)
+# Common Libraries
 
-Multi-module monorepo for shared **Spring Boot–aligned** libraries. All common setup and versions live in `libraries-parent`, which itself inherits `spring-boot-starter-parent`.
+Multi-module Maven monorepo for shared Spring Boot libraries.
 
-- Java: 21
-- Shared parent: `com.shdev:libraries-parent:0.1.0`
-- Modules: `common-utilities`, `security-utilities`, `oms-db-utilities`
-- Each library publishes with sources and Javadocs
+## Overview
 
----
+Provides reusable libraries for Spring Boot microservices:
+- **common-utilities** - Common utilities, constants, and helpers
+- **security-utilities** - JWT authentication and authorization
+- **oms-db-utilities** - Database entities, repositories, and services
 
-## 1) Build & install (Windows)
+## Quick Start
 
-From the repo root (`common-libraries/`):
+### Prerequisites
+- **JDK 21** or higher
+- **Maven 3.9+** (or use included Maven Wrapper)
 
-```bat
-:: Build, run tests, and install all modules to ~/.m2
+### Build All Modules
+
+```bash
+# Windows
 mvnw.cmd clean install
 
-:: Build only one module plus its required deps
+# Unix/Mac
+./mvnw clean install
+```
+
+### Build Single Module
+
+```bash
+# Build security-utilities and its dependencies
 mvnw.cmd -pl security-utilities -am clean install
 ```
 
-Prerequisites
-- JDK 21 on PATH
-- Maven 3.9+ (or the bundled Maven Wrapper `mvnw.cmd`)
+## Modules
 
----
+### [common-utilities](common-utilities/README.md)
+**Version**: 0.1.0
 
-## 2) Project layout
+Shared utilities and constants:
+- Header constants (Authorization, Atradius headers)
+- MDC utilities for structured logging
+- Header validators
+- Type conversion utilities
+- Common DTOs
 
-```text
-common-libraries/
-├─ pom.xml                 # root aggregator (no logic; just lists modules)
-├─ libraries-parent/       # shared parent (inherits Spring Boot parent)
-├─ common-utilities/       # general-purpose helpers (logging, strings, etc.)
-├─ security-utilities/     # security helpers; depends on common-utilities
-└─ oms-db-utilities/       # OMS persistence library (entities, mappers, services)
+**Maven**:
+```xml
+<dependency>
+    <groupId>com.shdev</groupId>
+    <artifactId>common-utilities</artifactId>
+    <version>0.1.0</version>
+</dependency>
 ```
 
-Key points
-- **Root POM**: only aggregates modules; does not contain plugin or version logic.
-- **libraries-parent**: single source of truth for:
-  - Spring Boot parent version
-  - Java/Maven constraints
-  - MapStruct / annotation processing config
-  - Internal library versions (`common-utilities`, `security-utilities`, `oms-db-utilities`).
-- **Libraries can use each other** without specifying versions (managed by `libraries-parent`).
+### [security-utilities](security-utilities/README.md)
+**Version**: 0.1.0
+
+JWT authentication and role-based authorization:
+- JWT authentication filter
+- Origin headers validation filter
+- Automatic role extraction from JWT
+- Spring Security integration
+- Auto-configuration support
+
+**Maven**:
+```xml
+<dependency>
+    <groupId>com.shdev</groupId>
+    <artifactId>security-utilities</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+### [oms-db-utilities](oms-db-utilities/README.md)
+**Version**: 0.1.0
+
+Database utilities and OMS entities:
+- JPA entities with auditing
+- Repository interfaces
+- Service layer base classes
+- MapStruct mappers
+- Database configuration
+
+**Maven**:
+```xml
+<dependency>
+    <groupId>com.shdev</groupId>
+    <artifactId>oms-db-utilities</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+## Project Structure
+
+```
+common-libraries/
+├── pom.xml                      # Root aggregator
+├── libraries-parent/            # Parent POM with shared config
+│   └── pom.xml
+├── common-utilities/            # Common utilities
+│   ├── pom.xml
+│   ├── README.md
+│   └── src/
+├── security-utilities/          # Security utilities
+│   ├── pom.xml
+│   ├── README.md
+│   └── src/
+└── oms-db-utilities/           # Database utilities
+    ├── pom.xml
+    ├── README.md
+    └── src/
+```
+
+## Parent POM
+
+**libraries-parent** provides:
+- Spring Boot parent inheritance (v3.5.8)
+- Java 21 configuration
+- Shared dependency versions
+- Plugin configurations (MapStruct, Lombok)
+- Version management for all modules
+
+All libraries inherit from `libraries-parent`:
+```xml
+<parent>
+    <groupId>com.shdev</groupId>
+    <artifactId>libraries-parent</artifactId>
+    <version>0.1.0</version>
+</parent>
+```
+
+## Technology Stack
+
+- **Java**: 21
+- **Spring Boot**: 3.5.8
+- **Maven**: 3.9+
+- **Lombok**: For boilerplate reduction
+- **MapStruct**: For object mapping
+
+## Version Management
+
+Versions are managed centrally in `libraries-parent/pom.xml`:
+- Spring Boot: 3.5.8
+- Module versions: 0.1.0
+- All dependencies aligned with Spring Boot
+
+## Module Dependencies
+
+```
+oms-db-utilities
+    └── common-utilities
+
+security-utilities
+    └── common-utilities
+
+common-utilities
+    └── (no internal dependencies)
+```
+
+## Usage in Microservices
+
+Add to your service `pom.xml`:
+
+```xml
+<parent>
+    <groupId>com.shdev</groupId>
+    <artifactId>libraries-parent</artifactId>
+    <version>0.1.0</version>
+</parent>
+
+<dependencies>
+    <dependency>
+        <groupId>com.shdev</groupId>
+        <artifactId>security-utilities</artifactId>
+    </dependency>
+    <!-- No version needed - managed by parent -->
+</dependencies>
+```
+
+## Development
+
+### Build Specific Module
+
+```bash
+mvnw.cmd -pl common-utilities clean install
+```
+
+### Skip Tests
+
+```bash
+mvnw.cmd clean install -DskipTests
+```
+
+### Run Tests Only
+
+```bash
+mvnw.cmd test
+```
 
 ---
 
