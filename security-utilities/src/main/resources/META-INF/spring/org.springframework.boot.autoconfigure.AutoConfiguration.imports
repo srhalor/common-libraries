@@ -1,2 +1,2 @@
-com.shdev.security.config.SecurityFilterAutoConfiguration
+com.shdev.security.config.SecurityUtilitiesConfiguration
 

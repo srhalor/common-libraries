@@ -2,6 +2,7 @@ package com.shdev.security.filter;
 
 import com.shdev.common.constants.HeaderConstants;
 import com.shdev.common.util.MdcUtil;
+import com.shdev.security.util.FilterErrorResponseUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -66,8 +67,11 @@ public class OriginHeadersFilter extends OncePerRequestFilter {
                     log.warn("❌ HEADER VALIDATION FAILED - Missing required origin headers for path: {}", path);
                     log.warn("Headers: Service={}, Application={}, User={}",
                             originService != null, originApplication != null, originUser != null);
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                    response.getWriter().write("{\"error\":\"invalid_request\",\"error_description\":\"Missing required origin headers\"}");
+
+                    FilterErrorResponseUtil.sendBadRequestError(
+                            response,
+                            "Missing required origin headers: Atradius-Origin-Service, Atradius-Origin-Application, Atradius-Origin-User",
+                            path);
                     return;
                 }
             }

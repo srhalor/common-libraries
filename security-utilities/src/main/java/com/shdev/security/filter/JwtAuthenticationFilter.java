@@ -1,12 +1,12 @@
 package com.shdev.security.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shdev.common.constants.HeaderConstants;
 import com.shdev.common.util.HeaderValidator;
 import com.shdev.common.util.MdcUtil;
 import com.shdev.security.authentication.JwtAuthenticationToken;
 import com.shdev.security.dto.TokenInfoDto;
 import com.shdev.security.service.JwtValidationService;
+import com.shdev.security.util.FilterErrorResponseUtil;
 import com.shdev.security.util.RoleParser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,18 +14,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Filter to validate JWT token from Authorization header.
@@ -40,27 +36,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtValidationService jwtValidationService;
     private final String tokenValidationUrl;
     private final List<String> excludedPaths;
-    private final ObjectMapper objectMapper;
 
     /**
      * Constructor for JwtAuthenticationFilter.
      *
-     * @param tokenValidationUrl    security-service token validation endpoint URL
-     * @param restTemplate          RestTemplate for HTTP calls
-     * @param objectMapper          ObjectMapper for JSON serialization
-     * @param excludedPaths         paths to exclude from JWT validation
+     * @param jwtValidationService Service for validating JWT tokens
+     * @param tokenValidationUrl   security-service token validation endpoint URL
+     * @param excludedPaths        paths to exclude from JWT validation
      */
-    public JwtAuthenticationFilter(String tokenValidationUrl, RestTemplate restTemplate,
-                                   ObjectMapper objectMapper, List<String> excludedPaths) {
+    public JwtAuthenticationFilter(JwtValidationService jwtValidationService,
+                                   String tokenValidationUrl,
+                                   List<String> excludedPaths) {
+        this.jwtValidationService = jwtValidationService;
         this.tokenValidationUrl = tokenValidationUrl;
-        this.jwtValidationService = new JwtValidationService(restTemplate, objectMapper);
         this.excludedPaths = excludedPaths;
-        this.objectMapper = objectMapper;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response,
-                                   @NonNull FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getRequestURI();
         String method = request.getMethod();
@@ -79,10 +73,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader(HeaderConstants.AUTHORIZATION);
         String token = HeaderValidator.extractBearerToken(authHeader);
 
-        // If no token present, let Spring Security handle it (may be public endpoint)
+        // If no token present, return 401 Unauthorized
         if (token == null) {
-            log.debug("No JWT token found - passing to Spring Security for authorization decision");
-            filterChain.doFilter(request, response);
+            log.warn("❌ AUTHENTICATION REQUIRED - Missing JWT token for path: {}", path);
+            FilterErrorResponseUtil.sendUnauthorizedError(
+                    response,
+                    "Authentication required. Please provide a valid JWT token.",
+                    path);
             return;
         }
 
@@ -114,7 +111,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.error("❌ AUTHENTICATION FAILED - JWT validation failed for path: {}", path);
             log.error("Error details: {}", e.getMessage());
             SecurityContextHolder.clearContext();
-            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "invalid_token", "Token validation failed");
+            FilterErrorResponseUtil.sendUnauthorizedError(
+                    response,
+                    "Token validation failed: " + e.getMessage(),
+                    path);
         } finally {
             clearMdc();
         }
@@ -165,17 +165,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return path.equals(pattern) || path.startsWith(pattern + "/");
     }
 
-    private void sendErrorResponse(HttpServletResponse response, HttpStatus status, String error, String description)
-            throws IOException {
-        response.setStatus(status.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-        Map<String, String> errorResponse = Map.of(
-                "error", error,
-                "error_description", description
-        );
-
-        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-    }
 }
 
