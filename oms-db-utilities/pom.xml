@@ -27,6 +27,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Shared libraries (no versions, managed by libraries-parent) -->
+        <dependency>
+            <groupId>com.shdev</groupId>
+            <artifactId>common-utilities</artifactId>
+        </dependency>
+
         <!-- MapStruct for DTO mapping (version managed by parent) -->
         <dependency>
             <groupId>org.mapstruct</groupId>

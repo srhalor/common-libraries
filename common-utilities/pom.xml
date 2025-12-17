@@ -15,6 +15,11 @@
   <description>A collection of common utility functions for Java applications.</description>
 
   <dependencies>
+    <!-- Spring Boot Web for REST and exception handling -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
 
     <!-- Optional extras / tests -->
     <dependency>
