@@ -1,6 +1,6 @@
 package com.shdev.omsdatabase.dto;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 
 /**
  * TH Batch Output DTO record to transfer TH batch data from service layer to client.
@@ -18,7 +18,6 @@ import java.time.Instant;
  * @param lastUpdateDat   the timestamp when the batch was last updated
  * @param createUidHeader the user identifier from header who created the batch
  * @param createUidToken  the user identifier from token who created the batch
- *
  * @author Shailesh Halor
  */
 public record ThBatchOutDto(
@@ -31,8 +30,8 @@ public record ThBatchOutDto(
         Boolean syncStatus,
         Boolean eventStatus,
         Long retryCount,
-        Instant createdDat,
-        Instant lastUpdateDat,
+        OffsetDateTime createdDat,
+        OffsetDateTime lastUpdateDat,
         String createUidHeader,
         String createUidToken
 ) {

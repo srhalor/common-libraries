@@ -8,7 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.*;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 /**
  * Entity representing effective-dated document configuration metadataKey/metadataValue mappings.
@@ -65,9 +65,9 @@ public class DocumentConfigEntity extends SingleAuditUidEntity implements Serial
 
     @Comment("Date/time from which this configuration row becomes effective.")
     @Column(name = "EFFECT_FROM_DAT", nullable = false)
-    private LocalDate effectFromDat;
+    private OffsetDateTime effectFromDat;
 
     @Comment("Date/time until which this configuration row remains effective.")
     @Column(name = "EFFECT_TO_DAT", nullable = false)
-    private LocalDate effectToDat;
+    private OffsetDateTime effectToDat;
 }

@@ -32,7 +32,6 @@ public class ErrorDetailEntity implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign metadataKey to tbom_th_batches(id).")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMTBE_ID", nullable = false)
     private ThBatchEntity omtbe;

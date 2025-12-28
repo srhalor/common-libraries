@@ -32,13 +32,11 @@ public class RequestsMetadataValueEntity implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign metadataKey to tbom_document_requests.id (the owning document request).")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMDRT_ID", nullable = false)
     private DocumentRequestEntity omdrt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign metadataKey to tbom_reference_data.id; must refer to a METADATA_KEY entry.")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMRDA_ID", nullable = false)
     private ReferenceDataEntity omrda;

@@ -30,7 +30,6 @@ public class DocumentRequestBlobEntity implements Serializable {
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Identifier matching tbom_document_requests.id (1:1); serves as both primary metadataKey and foreign metadataKey.")
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "OMDRT_ID", nullable = false)
     private DocumentRequestEntity tbomDocumentRequests;

@@ -5,12 +5,12 @@
 -- Summary:
 --   * Function add_document_configuration(...) returns ID of active row if one exists for business key.
 --   * If no active row or a future-dated version requested, inserts new version (triggers close overlaps).
---   * Effective dating: effect_from_dat defaults to TRUNC(SYSDATE); effect_to_dat defaults to DATE '4712-12-31'.
+--   * Effective dating: effect_from_dat defaults to SYSTIMESTAMP; effect_to_dat defaults to TO_TIMESTAMP('4712-12-31 23:59:59').
 -- Usage Examples:
 --   SELECT add_document_configuration('0','*','SIGNEE_1','GBMHEN1','Default signee 1') FROM dual;
---   SELECT add_document_configuration('0','IV','TOPIC_NAME','df.oms.invoice_documents','Invoice topic', DATE '2030-01-01') FROM dual;
+--   SELECT add_document_configuration('0','IV','TOPIC_NAME','df.oms.invoice_documents','Invoice topic', TO_TIMESTAMP('2030-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')) FROM dual;
 -- Notes:
---   * Active version determined by SYSDATE BETWEEN effect_from_dat AND effect_to_dat.
+--   * Active version determined by SYSTIMESTAMP BETWEEN effect_from_dat AND effect_to_dat.
 --   * A future-dated effect_from_dat creates a new version even when an active one exists.
 --   * Relies on get_reference_id(refDataType,refDataValue) function to resolve foreign key IDs.
 --   * Triggers manage ID, timestamps, historization.
@@ -22,16 +22,16 @@ CREATE OR REPLACE FUNCTION add_document_configuration(
     p_code_name     IN VARCHAR2,
     p_value         IN VARCHAR2,
     p_description   IN VARCHAR2 DEFAULT NULL,
-    p_effect_from   IN DATE DEFAULT NULL,
-    p_effect_to     IN DATE DEFAULT NULL
+    p_effect_from   IN TIMESTAMP DEFAULT NULL,
+    p_effect_to     IN TIMESTAMP DEFAULT NULL
 ) RETURN NUMBER
 IS
     v_footer_id       NUMBER;
     v_app_doc_spec_id NUMBER;
     v_code_id         NUMBER;
     v_id              NUMBER;
-    v_effect_from     DATE := NVL(p_effect_from, TRUNC(SYSDATE));
-    v_effect_to       DATE := NVL(p_effect_to, DATE '4712-12-31');
+    v_effect_from     TIMESTAMP := NVL(p_effect_from, SYSTIMESTAMP);
+    v_effect_to       TIMESTAMP := NVL(p_effect_to, TO_TIMESTAMP('4712-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'));
 BEGIN
     -- Resolve FK IDs via existing helper function
     v_footer_id       := get_reference_id('FOOTER_ID',       p_footer_name);
@@ -45,7 +45,7 @@ BEGIN
       AND d.omrda_app_doc_spec_id = v_app_doc_spec_id
       AND d.omrda_code_id         = v_code_id
       AND d.value                 = p_value
-      AND SYSDATE BETWEEN d.effect_from_dat AND d.effect_to_dat
+      AND SYSTIMESTAMP BETWEEN d.effect_from_dat AND d.effect_to_dat
     FETCH FIRST 1 ROWS ONLY;
 
     RETURN v_id; -- existing active row
@@ -87,8 +87,8 @@ CREATE OR REPLACE PROCEDURE add_document_configuration_proc(
     p_code_name     IN VARCHAR2,
     p_value         IN VARCHAR2,
     p_description   IN VARCHAR2 DEFAULT NULL,
-    p_effect_from   IN DATE DEFAULT NULL,
-    p_effect_to     IN DATE DEFAULT NULL
+    p_effect_from   IN TIMESTAMP DEFAULT NULL,
+    p_effect_to     IN TIMESTAMP DEFAULT NULL
 ) IS
     v_dummy NUMBER;
 BEGIN

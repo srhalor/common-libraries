@@ -14,8 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,8 +39,8 @@ class DtoMapperTest {
         e.setRefDataValue("INVOICE");
         e.setDescription("Invoice docs");
         e.setEditable(true);
-        e.setEffectFromDat(LocalDate.of(2024, 1, 1));
-        e.setEffectToDat(LocalDate.of(4712, 12, 31));
+        e.setEffectFromDat(OffsetDateTime.parse("2024-01-01T00:00:00Z"));
+        e.setEffectToDat(OffsetDateTime.parse("4712-12-31T23:59:59Z"));
 
         ReferenceDataDto dto = mapper.toDto(e);
         assertThat(dto.id()).isEqualTo(10L);
@@ -59,7 +58,7 @@ class DtoMapperTest {
     void validation_detectsTooLong() {
         String longType = "X".repeat(60); // exceeds 50
         ReferenceDataDto bad = new ReferenceDataDto(null, longType, "NAME", null, true,
-                LocalDate.now(), LocalDate.now().plusDays(1), Instant.now(), Instant.now(), null, null);
+                OffsetDateTime.now(), OffsetDateTime.now().plusDays(1), OffsetDateTime.now(), OffsetDateTime.now(), null, null);
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = factory.getValidator();
             Set<ConstraintViolation<ReferenceDataDto>> violations = validator.validate(bad);
@@ -69,19 +68,24 @@ class DtoMapperTest {
     }
 
     /**
-     * Test: toLite creates lightweight DTO with minimal fields
-     * Given: ReferenceDataEntity with ID and value
+     * Test: ReferenceDataLiteDto toDto mapping captures only ID, value, description
+     * Given: ReferenceDataEntity with full fields populated
      * When: toLite is called
-     * Then: Lite DTO contains only ID and refDataValue
+     * Then: only the ID, refDataValue, and description are mapped into the lite DTO
      */
     @Test
-    @DisplayName("lite_mapping: maps entity to lightweight DTO")
-    void lite_mapping() {
+    @DisplayName("lite: converts entity to ReferenceDataLiteDto capturing id, value, description only")
+    void refDataLite_toDto_capturesOnlyIdValueDescription() {
         ReferenceDataEntity e = new ReferenceDataEntity();
-        e.setId(5L);
-        e.setRefDataValue("IV");
+        e.setId(42L);
+        e.setRefDataValue("DOC_TYPE");
+        e.setDescription("Document type");
+        e.setRefDataType("IGNORED");
+        e.setEditable(true);
+
         ReferenceDataLiteDto lite = mapper.toLite(e);
-        assertThat(lite.id()).isEqualTo(5L);
-        assertThat(lite.refDataValue()).isEqualTo("IV");
+        assertThat(lite.id()).isEqualTo(42L);
+        assertThat(lite.refDataValue()).isEqualTo("DOC_TYPE");
+        assertThat(lite.description()).isEqualTo("Document type");
     }
 }

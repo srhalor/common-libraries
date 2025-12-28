@@ -10,7 +10,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 /**
  * Entity representing reference data used in the OMS system.
@@ -48,7 +48,7 @@ public class ReferenceDataEntity extends SingleAuditUidEntity implements Seriali
 
     @Comment("Indicates if the reference data metadataValue is editable ('Y'/'N').")
     @ColumnDefault("'N'")
-    @Column(name = "EDITABLE", nullable = false, length = 1)
+    @Column(name = "EDITABLE", nullable = false, columnDefinition = "CHAR(1)")
     private Boolean editable;
 
     @Size(max = 255)
@@ -58,10 +58,10 @@ public class ReferenceDataEntity extends SingleAuditUidEntity implements Seriali
 
     @Comment("Date from which this reference is effective.")
     @Column(name = "EFFECT_FROM_DAT", nullable = false)
-    private LocalDate effectFromDat;
+    private OffsetDateTime effectFromDat;
 
     @Comment("Date till which this reference is effective.")
     @Column(name = "EFFECT_TO_DAT", nullable = false)
-    private LocalDate effectToDat;
+    private OffsetDateTime effectToDat;
 
 }

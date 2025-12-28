@@ -4,7 +4,7 @@ import com.shdev.omsdatabase.constants.LengthConstants;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 /**
  * Document Configuration DTO record to transfer document configuration data from client to service layer.
@@ -16,7 +16,6 @@ import java.time.LocalDate;
  * @param description   the description of the document configuration
  * @param effectFromDat the date from which the configuration is effective
  * @param effectToDat   the date until which the configuration is effective
- *
  * @author Shailesh Halor
  */
 public record DocumentConfigInDto(
@@ -25,7 +24,7 @@ public record DocumentConfigInDto(
         @NotNull Long codeId,
         @NotNull @Size(max = LengthConstants.CONFIG_VALUE) String value,
         @Size(max = LengthConstants.DESCRIPTION) String description,
-        LocalDate effectFromDat,
-        LocalDate effectToDat
+        OffsetDateTime effectFromDat,
+        OffsetDateTime effectToDat
 ) {
 }

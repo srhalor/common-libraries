@@ -1,7 +1,6 @@
 package com.shdev.omsdatabase.dto;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 /**
  * Document Configuration DTO record to transfer document configuration data from service layer to client.
@@ -18,7 +17,6 @@ import java.time.LocalDate;
  * @param lastUpdateDat the timestamp when the configuration was last updated
  * @param createUid     the user identifier who created the configuration
  * @param lastUpdateUid the user identifier who last updated the configuration
- *
  * @author Shailesh Halor
  */
 public record DocumentConfigOutDto(
@@ -28,10 +26,10 @@ public record DocumentConfigOutDto(
         ReferenceDataLiteDto code,
         String value,
         String desc,
-        LocalDate effectFromDat,
-        LocalDate effectToDat,
-        Instant createdDat,
-        Instant lastUpdateDat,
+        OffsetDateTime effectFromDat,
+        OffsetDateTime effectToDat,
+        OffsetDateTime createdDat,
+        OffsetDateTime lastUpdateDat,
         String createUid,
         String lastUpdateUid
 ) {

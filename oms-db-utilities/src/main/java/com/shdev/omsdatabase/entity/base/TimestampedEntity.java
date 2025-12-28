@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 
 /**
  * Base mapped superclass providing common timestamp audit fields present on OMS entities.
@@ -27,9 +27,9 @@ public abstract class TimestampedEntity {
 
     @Comment("Record creation timestamp set by DB trigger.")
     @Column(name = "CREATED_DAT", nullable = false, updatable = false, insertable = false)
-    private Instant createdDat;
+    private OffsetDateTime createdDat;
 
     @Comment("Record last update timestamp set by DB trigger.")
     @Column(name = "LAST_UPDATE_DAT", nullable = false, updatable = false, insertable = false)
-    private Instant lastUpdateDat;
+    private OffsetDateTime lastUpdateDat;
 }

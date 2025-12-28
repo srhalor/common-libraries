@@ -1,6 +1,6 @@
 package com.shdev.omsdatabase.dto;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 
 /**
  * Document Request Output DTO record to transfer document request data from service layer to client.
@@ -14,7 +14,6 @@ import java.time.Instant;
  * @param lastUpdateDat   the timestamp when the document request was last updated
  * @param createUidHeader the user identifier from header who created the document request
  * @param createUidToken  the user identifier from token who created the document request
- *
  * @author Shailesh Halor
  */
 public record DocumentRequestOutDto(
@@ -23,8 +22,8 @@ public record DocumentRequestOutDto(
         ReferenceDataLiteDto documentType,
         ReferenceDataLiteDto documentName,
         ReferenceDataLiteDto documentStatus,
-        Instant createdDat,
-        Instant lastUpdateDat,
+        OffsetDateTime createdDat,
+        OffsetDateTime lastUpdateDat,
         String createUidHeader,
         String createUidToken
 ) {

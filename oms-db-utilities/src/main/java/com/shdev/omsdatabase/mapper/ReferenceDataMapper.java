@@ -6,7 +6,7 @@ import com.shdev.omsdatabase.entity.ReferenceDataEntity;
 import com.shdev.omsdatabase.util.DateUtils;
 import org.mapstruct.*;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 /**
  * Mapper interface for ReferenceDataEntity and its DTOs.
@@ -59,7 +59,7 @@ public interface ReferenceDataMapper {
     @AfterMapping
     default void applyDefaults(@MappingTarget ReferenceDataEntity entity) {
         if (entity.getEffectFromDat() == null) {
-            entity.setEffectFromDat(LocalDate.now());
+            entity.setEffectFromDat(OffsetDateTime.now());
         }
         if (entity.getEffectToDat() == null) {
             entity.setEffectToDat(DateUtils.oracleEndDate());

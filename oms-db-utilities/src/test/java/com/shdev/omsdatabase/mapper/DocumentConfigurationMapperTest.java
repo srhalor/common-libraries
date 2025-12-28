@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,7 +32,7 @@ class DocumentConfigurationMapperTest {
         DocumentConfigInDto dto = new DocumentConfigInDto(
                 1L, 2L, 3L,
                 "VAL", "Desc",
-                LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+                OffsetDateTime.parse("2024-01-01T00:00:00Z"), OffsetDateTime.parse("2024-12-31T23:59:59Z")
         );
         DocumentConfigEntity entity = mapper.toEntity(dto);
         assertThat(entity.getOmrdaFooter()).isNotNull();
@@ -41,8 +41,8 @@ class DocumentConfigurationMapperTest {
         assertThat(entity.getOmrdaCode().getId()).isEqualTo(3L);
         assertThat(entity.getValue()).isEqualTo("VAL");
         assertThat(entity.getDescription()).isEqualTo("Desc");
-        assertThat(entity.getEffectFromDat()).isEqualTo(LocalDate.of(2024, 1, 1));
-        assertThat(entity.getEffectToDat()).isEqualTo(LocalDate.of(2024, 12, 31));
+        assertThat(entity.getEffectFromDat()).isEqualTo(OffsetDateTime.parse("2024-01-01T00:00:00Z"));
+        assertThat(entity.getEffectToDat()).isEqualTo(OffsetDateTime.parse("2024-12-31T23:59:59Z"));
     }
 
     @Test
@@ -55,8 +55,8 @@ class DocumentConfigurationMapperTest {
         e.setOmrdaCode(ReferenceDataEntity.builder().id(7L).refDataValue("CODE").description("CodeDesc").build());
         e.setValue("CONFIG_VAL");
         e.setDescription("Config description");
-        e.setEffectFromDat(LocalDate.of(2024, 1, 1));
-        e.setEffectToDat(LocalDate.of(2024, 12, 31));
+        e.setEffectFromDat(OffsetDateTime.parse("2024-01-01T00:00:00Z"));
+        e.setEffectToDat(OffsetDateTime.parse("2024-12-31T23:59:59Z"));
 
         DocumentConfigOutDto dto = mapper.toDto(e);
         assertThat(dto.id()).isEqualTo(10L);
@@ -81,8 +81,8 @@ class DocumentConfigurationMapperTest {
         existing.setOmrdaCode(ReferenceDataEntity.builder().id(13L).build());
         existing.setValue("OLD_VAL");
         existing.setDescription("OLD_DESC");
-        existing.setEffectFromDat(LocalDate.of(2024, 1, 1));
-        existing.setEffectToDat(LocalDate.of(2024, 6, 30));
+        existing.setEffectFromDat(OffsetDateTime.parse("2024-01-01T00:00:00Z"));
+        existing.setEffectToDat(OffsetDateTime.parse("2024-06-30T23:59:59Z"));
 
         DocumentConfigInDto patch = new DocumentConfigInDto(
                 null,
@@ -91,7 +91,7 @@ class DocumentConfigurationMapperTest {
                 "NEW_VAL",
                 null,
                 null,
-                LocalDate.of(2024, 12, 31)
+                OffsetDateTime.parse("2024-12-31T23:59:59Z")
         );
 
         mapper.updateEntity(patch, existing);
@@ -101,7 +101,7 @@ class DocumentConfigurationMapperTest {
         assertThat(existing.getOmrdaCode().getId()).isEqualTo(13L);
         assertThat(existing.getValue()).isEqualTo("NEW_VAL");
         assertThat(existing.getDescription()).isEqualTo("OLD_DESC");
-        assertThat(existing.getEffectFromDat()).isEqualTo(LocalDate.of(2024, 1, 1));
-        assertThat(existing.getEffectToDat()).isEqualTo(LocalDate.of(2024, 12, 31));
+        assertThat(existing.getEffectFromDat()).isEqualTo(OffsetDateTime.parse("2024-01-01T00:00:00Z"));
+        assertThat(existing.getEffectToDat()).isEqualTo(OffsetDateTime.parse("2024-12-31T23:59:59Z"));
     }
 }

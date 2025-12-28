@@ -48,8 +48,8 @@ CREATE TABLE tbom_document_configurations
     omrda_code_id         NUMBER        NOT NULL,
     value                 VARCHAR2(255) NOT NULL,
     description           VARCHAR2(255),
-    effect_from_dat       DATE          NOT NULL,
-    effect_to_dat         DATE          NOT NULL,
+    effect_from_dat       TIMESTAMP     NOT NULL,
+    effect_to_dat         TIMESTAMP     NOT NULL,
     created_dat           TIMESTAMP     NOT NULL,
     last_update_dat       TIMESTAMP     NOT NULL,
     create_uid            VARCHAR2(20)  NOT NULL,
@@ -116,13 +116,13 @@ BEGIN
         IF :NEW.id IS NULL THEN
             SELECT sqomdcn_doc_config_id.NEXTVAL INTO :NEW.id FROM dual;
         END IF;
-        -- default effect_from_dat to today if not provided
+        -- default effect_from_dat to current timestamp if not provided
         IF :NEW.effect_from_dat IS NULL THEN
-            :NEW.effect_from_dat := TRUNC(SYSDATE);
+            :NEW.effect_from_dat := SYSTIMESTAMP;
         END IF;
         -- default effect_to_dat to distant future if not provided
         IF :NEW.effect_to_dat IS NULL THEN
-            :NEW.effect_to_dat := DATE '4712-12-31';
+            :NEW.effect_to_dat := TO_TIMESTAMP('4712-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS');
         END IF;
         -- created timestamp
         IF :NEW.created_dat IS NULL THEN
@@ -152,17 +152,19 @@ END BEFORE EACH ROW;
     AFTER STATEMENT IS
     BEGIN
         -- For each inserted/updated row, close overlapping previous versions for the same business key
+        -- A record is overlapping if: old.effect_to_dat >= new.effect_from_dat
+        -- A record is NOT overlapping if: old.effect_to_dat < new.effect_from_dat
         IF g_keys.COUNT > 0 THEN
             FOR i IN 1 .. g_keys.COUNT
                 LOOP
                     UPDATE tbom_document_configurations
-                    SET effect_to_dat = g_keys(i).eff_from - (1 / 86400)
+                    SET effect_to_dat = g_keys(i).eff_from - INTERVAL '1' SECOND
                     WHERE omrda_footer_id = g_keys(i).footer_id
                       AND omrda_app_doc_spec_id = g_keys(i).app_doc_spec_id
                       AND omrda_code_id = g_keys(i).code_id
                       AND value = g_keys(i).cfg_value
                       AND id <> g_keys(i).rec_id
-                      AND effect_to_dat >= g_keys(i).eff_from;
+                      AND effect_to_dat >= g_keys(i).eff_from;  -- Only close if overlapping
                 END LOOP;
         END IF;
     END AFTER STATEMENT;
@@ -181,4 +183,3 @@ BEGIN
     );
 END omdcn_02t_bdr;
 /
-

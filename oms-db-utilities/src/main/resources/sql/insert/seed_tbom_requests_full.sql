@@ -104,7 +104,7 @@ DECLARE
         v_id NUMBER;
         v_new_id NUMBER;
     BEGIN
-        v_id := get_reference_id(p_type, p_name, TRUNC(SYSDATE), 0);
+        v_id := get_reference_id(p_type, p_name, SYSTIMESTAMP, 0);
         IF v_id IS NULL THEN
             SELECT sqomrda_ref_data_id.NEXTVAL INTO v_new_id FROM dual;
             INSERT INTO tbom_reference_data (
@@ -114,7 +114,7 @@ DECLARE
             ) VALUES (
                 v_new_id,
                 p_type, p_name, p_editable, 'Auto-seeded by seed script',
-                TRUNC(SYSDATE), DATE '4712-12-31',
+                SYSTIMESTAMP, TO_TIMESTAMP('4712-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),
                 SYSTIMESTAMP, SYSTIMESTAMP, USER, USER
             );
         END IF;

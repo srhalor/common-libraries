@@ -34,7 +34,6 @@ public class ThBatchEntity extends DualCreateUidEntity implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign metadataKey to tbom_document_requests(id). One request can have multiple batches.")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMDRT_ID", nullable = false)
     private DocumentRequestEntity omdrt;
@@ -45,7 +44,6 @@ public class ThBatchEntity extends DualCreateUidEntity implements Serializable {
     private Long thBatchId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @Comment("Foreign metadataKey to tbom_reference_data(id) with refDataType BATCH_STATUS indicating batch processing status.")
     @OnDelete(action = OnDeleteAction.RESTRICT)
     @JoinColumn(name = "OMRDA_TH_STATUS_ID", nullable = false)
     private ReferenceDataEntity omrdaThStatus;
@@ -61,12 +59,12 @@ public class ThBatchEntity extends DualCreateUidEntity implements Serializable {
 
     @Comment("Flag indicating whether the Thunderhead batch status has been synchronized back to OMS.")
     @ColumnDefault("'N'")
-    @Column(name = "SYNC_STATUS", nullable = false, length = 1)
+    @Column(name = "SYNC_STATUS", nullable = false, columnDefinition = "CHAR(1)")
     private Boolean syncStatus;
 
     @Comment("Flag indicating whether the batch status event has been published.")
     @ColumnDefault("'N'")
-    @Column(name = "EVENT_STATUS", nullable = false, length = 1)
+    @Column(name = "EVENT_STATUS", nullable = false, columnDefinition = "CHAR(1)")
     private Boolean eventStatus;
 
     @Comment("Number of retry attempts for synchronization and event publishing.")

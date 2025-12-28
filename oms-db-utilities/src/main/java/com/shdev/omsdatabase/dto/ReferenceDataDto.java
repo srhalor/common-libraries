@@ -4,8 +4,7 @@ import com.shdev.omsdatabase.constants.LengthConstants;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 /**
  * Reference Data DTO record to transfer reference data between service and client layers.
@@ -30,10 +29,10 @@ public record ReferenceDataDto(
         @NotNull @Size(max = LengthConstants.REF_DATA_VALUE) String refDataValue,
         @Size(max = LengthConstants.DESCRIPTION) String description,
         @NotNull Boolean editable,
-        LocalDate effectFromDat,
-        LocalDate effectToDat,
-        Instant createdDat,
-        Instant lastUpdateDat,
+        OffsetDateTime effectFromDat,
+        OffsetDateTime effectToDat,
+        OffsetDateTime createdDat,
+        OffsetDateTime lastUpdateDat,
         String createUid,
         String lastUpdateUid
 ) {
