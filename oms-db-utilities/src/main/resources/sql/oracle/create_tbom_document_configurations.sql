@@ -92,10 +92,13 @@ ALTER TABLE tbom_document_configurations
         REFERENCES tbom_reference_data (id);
 
 -- Compound trigger to set PK, timestamps, user ids and implement logical historization on insert/update
+-- On UPDATE of data fields: closes current version and creates new version automatically
 CREATE OR REPLACE TRIGGER omdcn_01t_bir_bur
     FOR INSERT OR UPDATE
     ON tbom_document_configurations
     COMPOUND TRIGGER
+
+    -- Collection for INSERT operations (to close overlapping versions)
     TYPE t_key_rec IS RECORD
                       (
                           footer_id       tbom_document_configurations.omrda_footer_id%TYPE,
@@ -105,11 +108,28 @@ CREATE OR REPLACE TRIGGER omdcn_01t_bir_bur
                           rec_id          tbom_document_configurations.id%TYPE,
                           eff_from        tbom_document_configurations.effect_from_dat%TYPE
                       );
-
     TYPE t_key_tab IS TABLE OF t_key_rec;
     g_keys t_key_tab := t_key_tab();
 
+    -- Collection for UPDATE operations (to create new versions)
+    TYPE t_version_rec IS RECORD
+                      (
+                          old_id          tbom_document_configurations.id%TYPE,
+                          footer_id       tbom_document_configurations.omrda_footer_id%TYPE,
+                          app_doc_spec_id tbom_document_configurations.omrda_app_doc_spec_id%TYPE,
+                          code_id         tbom_document_configurations.omrda_code_id%TYPE,
+                          cfg_value       tbom_document_configurations.value%TYPE,
+                          description     tbom_document_configurations.description%TYPE,
+                          effect_from_dat tbom_document_configurations.effect_from_dat%TYPE,
+                          effect_to_dat   tbom_document_configurations.effect_to_dat%TYPE,
+                          create_uid      tbom_document_configurations.create_uid%TYPE,
+                          last_update_uid tbom_document_configurations.last_update_uid%TYPE
+                      );
+    TYPE t_version_tab IS TABLE OF t_version_rec;
+    g_versions t_version_tab := t_version_tab();
+
 BEFORE EACH ROW IS
+    v_data_changed BOOLEAN := FALSE;
 BEGIN
     -- Ensure PK is set (use sequence on insert)
     IF INSERTING THEN
@@ -128,6 +148,57 @@ BEGIN
         IF :NEW.created_dat IS NULL THEN
             :NEW.created_dat := SYSTIMESTAMP;
         END IF;
+
+        -- Collect for post-statement processing
+        g_keys.EXTEND;
+        g_keys(g_keys.COUNT).footer_id := :NEW.omrda_footer_id;
+        g_keys(g_keys.COUNT).app_doc_spec_id := :NEW.omrda_app_doc_spec_id;
+        g_keys(g_keys.COUNT).code_id := :NEW.omrda_code_id;
+        g_keys(g_keys.COUNT).cfg_value := :NEW.value;
+        g_keys(g_keys.COUNT).rec_id := :NEW.id;
+        g_keys(g_keys.COUNT).eff_from := :NEW.effect_from_dat;
+    END IF;
+
+    -- For UPDATE operations: detect data changes and prepare versioning
+    IF UPDATING THEN
+        -- Check if any data fields changed
+        -- Note: effect_to_dat is checked, but if it's the ONLY field changing to a past timestamp,
+        -- it's treated as a logical delete (no versioning)
+        v_data_changed := (
+            :OLD.omrda_footer_id != :NEW.omrda_footer_id OR
+            :OLD.omrda_app_doc_spec_id != :NEW.omrda_app_doc_spec_id OR
+            :OLD.omrda_code_id != :NEW.omrda_code_id OR
+            :OLD.value != :NEW.value OR
+            NVL(:OLD.description, 'X') != NVL(:NEW.description, 'X') OR
+            :OLD.effect_from_dat != :NEW.effect_from_dat OR
+            (:OLD.effect_to_dat != :NEW.effect_to_dat AND :NEW.effect_to_dat >= SYSTIMESTAMP)
+        );
+
+        IF v_data_changed THEN
+            -- Collect new version data for insertion in AFTER STATEMENT
+            g_versions.EXTEND;
+            g_versions(g_versions.COUNT).old_id := :OLD.id;
+            g_versions(g_versions.COUNT).footer_id := :NEW.omrda_footer_id;
+            g_versions(g_versions.COUNT).app_doc_spec_id := :NEW.omrda_app_doc_spec_id;
+            g_versions(g_versions.COUNT).code_id := :NEW.omrda_code_id;
+            g_versions(g_versions.COUNT).cfg_value := :NEW.value;
+            g_versions(g_versions.COUNT).description := :NEW.description;
+            g_versions(g_versions.COUNT).effect_from_dat := SYSTIMESTAMP;
+            g_versions(g_versions.COUNT).effect_to_dat := :NEW.effect_to_dat;  -- Use the new effect_to_dat
+            g_versions(g_versions.COUNT).create_uid := :OLD.create_uid;
+            g_versions(g_versions.COUNT).last_update_uid := USER;
+
+            -- Close current version (set effect_to_dat to 1 second before current timestamp)
+            :NEW.effect_to_dat := SYSTIMESTAMP - INTERVAL '1' SECOND;
+
+            -- Prevent further changes to other fields - only closing this version
+            :NEW.omrda_footer_id := :OLD.omrda_footer_id;
+            :NEW.omrda_app_doc_spec_id := :OLD.omrda_app_doc_spec_id;
+            :NEW.omrda_code_id := :OLD.omrda_code_id;
+            :NEW.value := :OLD.value;
+            :NEW.description := :OLD.description;
+            :NEW.effect_from_dat := :OLD.effect_from_dat;
+        END IF;
     END IF;
 
     -- always set last update timestamp (and default uids when missing)
@@ -138,20 +209,11 @@ BEGIN
     IF :NEW.last_update_uid IS NULL THEN
         :NEW.last_update_uid := USER;
     END IF;
-
-    -- collect keys for post-statement historization (only for insert/update)
-    g_keys.EXTEND;
-    g_keys(g_keys.COUNT).footer_id := :NEW.omrda_footer_id;
-    g_keys(g_keys.COUNT).app_doc_spec_id := :NEW.omrda_app_doc_spec_id;
-    g_keys(g_keys.COUNT).code_id := :NEW.omrda_code_id;
-    g_keys(g_keys.COUNT).cfg_value := :NEW.value;
-    g_keys(g_keys.COUNT).rec_id := :NEW.id;
-    g_keys(g_keys.COUNT).eff_from := :NEW.effect_from_dat;
 END BEFORE EACH ROW;
 
     AFTER STATEMENT IS
     BEGIN
-        -- For each inserted/updated row, close overlapping previous versions for the same business key
+        -- For each inserted row, close overlapping previous versions
         -- A record is overlapping if: old.effect_to_dat >= new.effect_from_dat
         -- A record is NOT overlapping if: old.effect_to_dat < new.effect_from_dat
         IF g_keys.COUNT > 0 THEN
@@ -165,6 +227,38 @@ END BEFORE EACH ROW;
                       AND value = g_keys(i).cfg_value
                       AND id <> g_keys(i).rec_id
                       AND effect_to_dat >= g_keys(i).eff_from;  -- Only close if overlapping
+                END LOOP;
+        END IF;
+
+        -- For each updated row with data changes, insert new version
+        IF g_versions.COUNT > 0 THEN
+            FOR i IN 1 .. g_versions.COUNT
+                LOOP
+                    INSERT INTO tbom_document_configurations (
+                        omrda_footer_id,
+                        omrda_app_doc_spec_id,
+                        omrda_code_id,
+                        value,
+                        description,
+                        effect_from_dat,
+                        effect_to_dat,
+                        created_dat,
+                        last_update_dat,
+                        create_uid,
+                        last_update_uid
+                    ) VALUES (
+                        g_versions(i).footer_id,
+                        g_versions(i).app_doc_spec_id,
+                        g_versions(i).code_id,
+                        g_versions(i).cfg_value,
+                        g_versions(i).description,
+                        g_versions(i).effect_from_dat,
+                        g_versions(i).effect_to_dat,
+                        SYSTIMESTAMP,
+                        SYSTIMESTAMP,
+                        g_versions(i).create_uid,
+                        g_versions(i).last_update_uid
+                    );
                 END LOOP;
         END IF;
     END AFTER STATEMENT;
