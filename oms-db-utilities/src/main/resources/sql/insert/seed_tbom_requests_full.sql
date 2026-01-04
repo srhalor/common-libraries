@@ -150,8 +150,8 @@ BEGIN
         ensure_ref('DOCUMENT_NAME', v_invoice_names(i), 'N');
     END LOOP;
 
-    -- Generate 23 document requests
-    FOR i IN 1 .. 23 LOOP
+    -- Generate 100 document requests
+    FOR i IN 1 .. 100 LOOP
         v_src := pick(v_source_systems);
         v_type := pick(v_doc_types);
         IF v_type = 'POLICY' THEN

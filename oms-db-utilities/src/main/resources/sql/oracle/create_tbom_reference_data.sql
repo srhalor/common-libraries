@@ -75,7 +75,7 @@ CREATE INDEX omrda_03 ON tbom_reference_data (effect_from_dat);
 CREATE INDEX omrda_04 ON tbom_reference_data (effect_to_dat);
 
 -- Compound trigger to set PK, timestamps, user ids and implement logical historization on insert/update
--- On UPDATE of data fields: closes current version and creates new version automatically
+-- On UPDATE of data fields: updates current row (keeping same ID) and creates historical snapshot with OLD values
 CREATE OR REPLACE TRIGGER omrda_01t_bir_bur
     FOR INSERT OR UPDATE
     ON tbom_reference_data
@@ -92,24 +92,25 @@ CREATE OR REPLACE TRIGGER omrda_01t_bir_bur
     TYPE t_key_tab IS TABLE OF t_key_rec;
     g_keys t_key_tab := t_key_tab();
 
-    -- Collection for UPDATE operations (to create new versions)
-    TYPE t_version_rec IS RECORD
+    -- Collection for UPDATE operations (to create historical records with OLD data)
+    TYPE t_history_rec IS RECORD
                       (
-                          old_id          tbom_reference_data.id%TYPE,
                           ref_type        tbom_reference_data.ref_data_type%TYPE,
                           ref_name        tbom_reference_data.ref_data_value%TYPE,
                           editable        tbom_reference_data.editable%TYPE,
                           description     tbom_reference_data.description%TYPE,
                           effect_from_dat tbom_reference_data.effect_from_dat%TYPE,
                           effect_to_dat   tbom_reference_data.effect_to_dat%TYPE,
+                          created_dat     tbom_reference_data.created_dat%TYPE,
                           create_uid      tbom_reference_data.create_uid%TYPE,
                           last_update_uid tbom_reference_data.last_update_uid%TYPE
                       );
-    TYPE t_version_tab IS TABLE OF t_version_rec;
-    g_versions t_version_tab := t_version_tab();
+    TYPE t_history_tab IS TABLE OF t_history_rec;
+    g_history t_history_tab := t_history_tab();
 
 BEFORE EACH ROW IS
     v_data_changed BOOLEAN := FALSE;
+    v_update_time TIMESTAMP;
 BEGIN
     -- Ensure PK is set (use sequence on insert)
     IF INSERTING THEN
@@ -137,42 +138,41 @@ BEGIN
         g_keys(g_keys.COUNT).eff_from := :NEW.effect_from_dat;
     END IF;
 
-    -- For UPDATE operations: detect data changes and prepare versioning
+    -- For UPDATE operations: detect data changes and prepare historical record
     IF UPDATING THEN
+        v_update_time := SYSTIMESTAMP;
+
         -- Check if any data fields changed
-        -- Note: effect_to_dat is checked, but if it's the ONLY field changing to a past timestamp,
-        -- it's treated as a logical delete (no versioning)
         v_data_changed := (
             :OLD.ref_data_type != :NEW.ref_data_type OR
             :OLD.ref_data_value != :NEW.ref_data_value OR
             NVL(:OLD.editable, 'X') != NVL(:NEW.editable, 'X') OR
             NVL(:OLD.description, 'X') != NVL(:NEW.description, 'X') OR
-            :OLD.effect_from_dat != :NEW.effect_from_dat OR
             (:OLD.effect_to_dat != :NEW.effect_to_dat AND :NEW.effect_to_dat >= SYSTIMESTAMP)
         );
 
         IF v_data_changed THEN
-            -- Collect new version data for insertion in AFTER STATEMENT
-            g_versions.EXTEND;
-            g_versions(g_versions.COUNT).old_id := :OLD.id;
-            g_versions(g_versions.COUNT).ref_type := :NEW.ref_data_type;
-            g_versions(g_versions.COUNT).ref_name := :NEW.ref_data_value;
-            g_versions(g_versions.COUNT).editable := :NEW.editable;
-            g_versions(g_versions.COUNT).description := :NEW.description;
-            g_versions(g_versions.COUNT).effect_from_dat := SYSTIMESTAMP;
-            g_versions(g_versions.COUNT).effect_to_dat := :NEW.effect_to_dat;  -- Use the new effect_to_dat
-            g_versions(g_versions.COUNT).create_uid := :OLD.create_uid;
-            g_versions(g_versions.COUNT).last_update_uid := USER;
+            -- Collect OLD data for historical record insertion in AFTER STATEMENT
+            g_history.EXTEND;
+            g_history(g_history.COUNT).ref_type := :OLD.ref_data_type;
+            g_history(g_history.COUNT).ref_name := :OLD.ref_data_value;
+            g_history(g_history.COUNT).editable := :OLD.editable;
+            g_history(g_history.COUNT).description := :OLD.description;
+            g_history(g_history.COUNT).effect_from_dat := :OLD.effect_from_dat;
+            g_history(g_history.COUNT).effect_to_dat := v_update_time - INTERVAL '1' SECOND;
+            g_history(g_history.COUNT).created_dat := :OLD.created_dat;
+            g_history(g_history.COUNT).create_uid := :OLD.create_uid;
+            g_history(g_history.COUNT).last_update_uid := USER;
 
-            -- Close current version (set effect_to_dat to 1 second before current timestamp)
-            :NEW.effect_to_dat := SYSTIMESTAMP - INTERVAL '1' SECOND;
-
-            -- Prevent further changes to other fields - only closing this version
-            :NEW.ref_data_type := :OLD.ref_data_type;
-            :NEW.ref_data_value := :OLD.ref_data_value;
-            :NEW.editable := :OLD.editable;
-            :NEW.description := :OLD.description;
-            :NEW.effect_from_dat := :OLD.effect_from_dat;
+            -- Update CURRENT row with NEW data (keep same ID)
+            -- Set effect_from_dat to current timestamp
+            :NEW.effect_from_dat := v_update_time;
+            -- Ensure effect_to_dat is distant future if not explicitly set to a past date
+            IF :NEW.effect_to_dat < v_update_time THEN
+                :NEW.effect_to_dat := :NEW.effect_to_dat;  -- Keep the logical delete date
+            ELSE
+                :NEW.effect_to_dat := TO_TIMESTAMP('4712-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS');
+            END IF;
         END IF;
     END IF;
 
@@ -203,9 +203,9 @@ END BEFORE EACH ROW;
                 END LOOP;
         END IF;
 
-        -- For each updated row with data changes, insert new version
-        IF g_versions.COUNT > 0 THEN
-            FOR i IN 1 .. g_versions.COUNT
+        -- For each updated row with data changes, insert historical record with OLD values
+        IF g_history.COUNT > 0 THEN
+            FOR i IN 1 .. g_history.COUNT
                 LOOP
                     INSERT INTO tbom_reference_data (
                         ref_data_type,
@@ -219,16 +219,16 @@ END BEFORE EACH ROW;
                         create_uid,
                         last_update_uid
                     ) VALUES (
-                        g_versions(i).ref_type,
-                        g_versions(i).ref_name,
-                        g_versions(i).editable,
-                        g_versions(i).description,
-                        g_versions(i).effect_from_dat,
-                        g_versions(i).effect_to_dat,
+                        g_history(i).ref_type,
+                        g_history(i).ref_name,
+                        g_history(i).editable,
+                        g_history(i).description,
+                        g_history(i).effect_from_dat,
+                        g_history(i).effect_to_dat,
+                        g_history(i).created_dat,
                         SYSTIMESTAMP,
-                        SYSTIMESTAMP,
-                        g_versions(i).create_uid,
-                        g_versions(i).last_update_uid
+                        g_history(i).create_uid,
+                        g_history(i).last_update_uid
                     );
                 END LOOP;
         END IF;
